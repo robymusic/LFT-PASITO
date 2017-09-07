@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><project basedir="." default="compile" name="PasitoCompilador">
+
+	  <property location="src" name="java"/>
+	  <property location="bin/cls" name="classes"/>
+	  <property location="bin/jar" name="result"/>
+	  <property location="lib" name="lib"/>
+	  <property location="tools" name="tools"/>
+	  <property location="." name="base"/>
+
+	  <taskdef classname="JFlex.anttask.JFlexTask" classpath="${tools}/JFlex.jar" name="jflex"/>
+	  <taskdef classname="java_cup.anttask.CUPTask" classpath="${tools}/java-cup-11b.jar" name="cup"/>
+
+	  <target name="generate">
+	    
+	    <cup debugsymbols="true" destdir="${java}" expect="1" interface="true" locations="true" parser="Parser" srcfile="${base}/src/SyntacticAnalyzer/Pasito.cup"/>
+	  	<jflex destdir="${java}" file="${base}/src/LexicalAnalyzer/Pasito.jflex"/>
+	  </target>
+
+	  <path id="libraries">
+	  	<files includes="${tools}/java-cup-11b-runtime.jar"/>
+	  </path>
+
+	  <target depends="generate" name="compile">
+	  	<mkdir dir="${classes}"/>
+	  	<mkdir dir="${result}"/>
+
+	    <javac destdir="${classes}" includeantruntime="false" srcdir="${java}">
+	    	<classpath refid="libraries"/>
+	    </javac>
+	  </target>
+
+	  <target name="clean">
+	    <delete file="${java}/SyntacticAnalyzer/Parser.java"/>
+	    <delete file="${java}/SyntacticAnalyzer/sym.java"/>
+	    <delete file="${java}/LexicalAnalyzer/LexicalAnalyzer.java"/>
+	    <delete dir="${classes}"/>
+	    <delete dir="${result}"/>
+	  </target>
+</project>

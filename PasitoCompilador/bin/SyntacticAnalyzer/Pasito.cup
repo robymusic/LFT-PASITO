@@ -1,0 +1,339 @@
+package SyntacticAnalyzer;
+
+import java.io.FileInputStream;
+import LexicalAnalyzer.LexicalAnalyzer;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java_cup.runtime.*;
+import java.io.File;
+import java.util.*;
+
+//Importes das classses abstratas
+import pasito.ast.Program;
+import pasito.ast.declaration.*;
+import pasito.ast.expression.*;
+import pasito.ast.methodSpecOrInterfaceName.*;
+import pasito.ast.signature.*;
+import pasito.ast.statement.*;
+import pasito.ast.topLevelDecl.*;
+import pasito.ast.type.*;
+// 
+
+parser code {:
+  protected LexicalAnalyzer lexer; // cria objeto LexicalAnalyzer (classe criada pelo JFlex com os automatos)
+  :};
+
+init with {:
+    ComplexSymbolFactory f = new ComplexSymbolFactory(); // cria instância do ComplexSymbolFactory
+    symbolFactory = f;	
+ 	 File file = new File("input.txt");
+ 	 FileInputStream fis = null;
+  try {
+    fis = new FileInputStream(file);
+  } catch (IOException e) {
+    e.printStackTrace();
+  } 
+/*
+    File file = new File(Paths.get("").toAbsolutePath().toString() + "/Files4Test/" + "entrada-completa.pas"); // fazendo ler direto o arquivo de entrada em Pasito
+    FileInputStream fis = null;
+    try {
+        fis = new FileInputStream(file);
+    } catch (IOException e) {
+        e.printStackTrace();
+    }*/
+    lexer = new LexicalAnalyzer(f,fis); // chamando construtor do LexicalAnalyzer com symbolFactory e arquivo de entrada em pasito
+:};
+
+scan with {:
+    return lexer.next_token(); // chama próximo token
+:};
+
+/* @@@@@@@@@@@@ terminais (tokens retornados pelo analisador léxico, utilizados para criar classe Symbol) @@@@@@@@@@@@ */
+terminal String ID;
+terminal DEFAULT, FUNC, INTERFACE,FALLTHROUGH, CASE, STRUCT, TYPE, ELSE, SWITCH, IF, CONST, VAR;
+terminal FOR, RETURN, RANGE;
+terminal BOOLEAN, TRUE, FALSE, INT32, FLOAT64;
+terminal Integer INT_NUMBER, NUMBER;
+terminal Float FLOAT_NUMBER;
+terminal PLUS, MINUS, TIMES, DIV, AND, EQ, NOT;
+terminal LPAR, RPAR, LT, LSBRACK, RSBRACK, LBRACK,
+         RBRACK, ASSIGN, DASSIGN, COMMA, SEMICOLON, EXCL, DOTDOTDOT, COLON, DOT;
+
+non terminal Program Program;
+non terminal List<TopLevelDecl> TopLevelDecl;
+non terminal List<Declaration> Declaration;
+non terminal FunctionDecl, MethodDecl; 
+non terminal ConstDecl;
+non terminal List<VarDecl> VarDecl;
+non terminal TypeDecl;
+non terminal Type Type;
+non terminal TypeSpecList;
+non terminal TypeLit, ArrayType, StructType, SliceType;
+non terminal FieldDecl, FieldDeclList;
+non terminal MethodSpec, MethodSpecList;
+non terminal Signature, Parameters, Resul;
+non terminal ParameterList, ParameterDeclList;
+non terminal TypeList, Types;
+non terminal List<String> IdentifierList;
+non terminal Expression;
+non terminal ExpressionList;
+non terminal CompExpression, AddExpression, MultExpression;
+non terminal UnaryExpr, unary_op, PrimaryExpr, Slice, Arguments, Args;
+non terminal VariadicCommaOp;
+non terminal Operand;
+non terminal CompositeLit,  Function, MethodExpr, LiteralType, LiteralValue;
+non terminal ReceiverType;
+non terminal Element, ElementList, KeyedElement;
+non terminal List<VarDecl> VarSpec, VarSpecList;
+non terminal Block, Statement, StatementList, SimpleStmt, ForStmt;
+non terminal IfStmt, ElseOpt;
+
+/* Precedences */
+precedence left AND;
+precedence left LT, EQ;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV;
+
+Program ::= TopLevelDecl : topDecs SEMICOLON Program : prog
+            {: prog.declarations.addAll(0,topDecs);
+               RESULT = prog; :}
+		  | {: RESULT = new Program(new LinkedList<>()); :} 
+		    ;
+			
+TopLevelDecl ::=  Declaration
+				| FunctionDecl
+				| MethodDecl ;
+
+Declaration ::= ConstDecl
+			  | VarDecl 
+			  | TypeDecl;
+
+TypeDecl ::= TYPE ID Type
+           | TYPE LPAR TypeSpecList RPAR;
+
+TypeSpecList ::=  ID Type SEMICOLON TypeSpecList
+				| ;
+
+Type ::=  ID 
+		| TypeLit;
+
+TypeLit ::= ArrayType 
+		  | StructType
+		  | TIMES Type
+		  | INTERFACE LBRACK MethodSpecList RBRACK 
+		  | SliceType ;
+
+StructType ::= STRUCT LBRACK FieldDeclList RBRACK ;
+
+ArrayType ::= LSBRACK Expression RSBRACK Type ;
+
+SliceType ::= LSBRACK RSBRACK Type ;
+
+FieldDeclList ::= FieldDecl SEMICOLON FieldDeclList
+				| ;
+
+FieldDecl ::=  ID Type
+			 | ID
+			 | TIMES ID ;			 
+
+MethodSpecList ::= MethodSpec SEMICOLON MethodSpecList
+				| ;
+
+MethodSpec ::= ID Signature 
+			 | ID;
+
+Signature ::= Parameters 
+            | Parameters Resul ;
+	            
+Resul ::= Parameters
+	    | Type ;
+    
+Parameters ::= LPAR RPAR
+			 | LPAR ParameterList RPAR
+			 | LPAR TypeList RPAR ;
+
+ParameterList ::= ParameterDeclList
+				| ID DOTDOTDOT Type
+				| ID DOTDOTDOT Type COMMA ;
+
+ParameterDeclList ::= IdentifierList Type COMMA ParameterDeclList 
+				   | IdentifierList Type COMMA
+				   | IdentifierList Type
+				   | IdentifierList Type COMMA ID DOTDOTDOT Type COMMA
+				   | IdentifierList Type COMMA ID DOTDOTDOT Type ;
+
+TypeList ::=  Types
+			| DOTDOTDOT Type COMMA
+			| DOTDOTDOT Type
+		;
+
+Types ::=  ID COMMA Types
+		 | ID COMMA DOTDOTDOT Type COMMA
+		 | ID COMMA DOTDOTDOT Type
+         | ID COMMA
+         | ID
+         | TypeLit COMMA Types
+		 | TypeLit COMMA DOTDOTDOT Type COMMA
+		 | TypeLit COMMA DOTDOTDOT Type
+         | TypeLit COMMA
+         | TypeLit ;
+
+IdentifierList ::= ID COMMA IdentifierList
+				 | ID ;
+
+ConstDecl ::=  CONST IdentifierList
+			 | CONST IdentifierList ASSIGN ExpressionList
+			 | CONST IdentifierList Type ASSIGN ExpressionList ;
+
+ExpressionList ::= ExpressionList COMMA Expression 
+				 | Expression;
+
+Expression ::= Expression PLUS Expression
+			 | Expression MINUS Expression
+			 | Expression TIMES Expression
+			 | Expression DIV Expression
+			 | Expression LT Expression
+			 | Expression EQ Expression
+			 | Expression AND Expression 
+			 | UnaryExpr ;			 
+
+UnaryExpr ::= PrimaryExpr
+			| unary_op UnaryExpr ;
+
+unary_op ::= PLUS | MINUS | EXCL | TIMES ;
+
+PrimaryExpr ::= Operand
+			  | PrimaryExpr DOT ID
+			  | PrimaryExpr LSBRACK Expression RSBRACK
+			  | PrimaryExpr LSBRACK Slice RSBRACK
+			  | PrimaryExpr LPAR Arguments RPAR
+			  | PrimaryExpr LPAR RPAR ;
+
+Slice ::=  Expression  COLON  Expression 
+	     | Expression COLON
+	     | COLON Expression
+	     | COLON
+	     | Expression COLON Expression COLON Expression
+	     | COLON Expression COLON Expression ;
+
+Arguments ::= ExpressionList VariadicCommaOp ;
+/*
+			| TypeLit1 COMMA ExpressionList VariadicCommaOp // with Type is Ambbiguous
+			| TypeLit1 VariadicCommaOp
+			| TIMES Type COMMA ExpressionList VariadicCommaOp // with Type is Ambbiguous
+			| TIMES Type VariadicCommaOp; //with Type is ambiguous
+//btw, Type is correct here? The documentation says nothing about this. */
+/**** TIRAMOS Type como primeiro argumento ***********/
+
+VariadicCommaOp ::= DOTDOTDOT
+	 | COMMA
+	 | DOTDOTDOT COMMA
+	 | ;
+
+Operand ::= INT_NUMBER
+		  | FLOAT_NUMBER
+		  | TRUE
+		  | FALSE
+		  | CompositeLit
+		  | FUNC Function 
+		  //| MethodExpr
+		  | LPAR Expression RPAR ;
+
+CompositeLit ::= LiteralType LiteralValue;
+
+LiteralType ::= StructType
+			  | ArrayType
+			  | LSBRACK DOTDOTDOT RSBRACK Type
+			  | SliceType
+			   ;
+			  
+LiteralValue ::= LBRACK RBRACK
+			   | LBRACK ElementList RBRACK ;
+
+ElementList ::= KeyedElement COMMA ElementList
+			  | KeyedElement 
+			  | KeyedElement COMMA ;
+
+			  
+KeyedElement ::=  Element
+			 	| Element COLON Element ;
+			 	
+Element ::= Expression
+		  | LiteralValue ;
+
+/*
+MethodExpr ::= ReceiverType DOT ID ;
+*/
+//**** MethodExpr will be solved at the static semantics
+
+ReceiverType ::= ID 
+			   | LPAR TIMES ID LPAR
+			   | LPAR ReceiverType RPAR ;
+
+VarDecl ::= VAR VarSpec : varDecls
+			{: RESULT = varDecls; :} 
+		  | VAR  LPAR VarSpecList : varDecls RPAR
+		    {: RESULT = varDecls; :}  ;
+		  
+VarSpecList ::= VarSpecList : varDecls1 VarSpec : varDecls2 SEMICOLON
+				{: varDecls1.addAll(varDecls2); 
+				   RESULT = varDecls1; :} 
+			  | {: RESULT = new LinkedList<>(); :} ;
+
+VarSpec ::= IdentifierList : ids Type : type
+			{: List<VarDecl> varDecls = new LinkedList<>(); 
+			   for (String id: ids)
+					varDecls.add(new VarDecl(id, type, null));
+			   RESULT = varDecls;
+			:}
+		  | IdentifierList ASSIGN ExpressionList
+		  | IdentifierList Type ASSIGN ExpressionList ;
+
+FunctionDecl ::= FUNC ID Function ;
+
+Function ::= Signature Block ;
+
+Block ::= LBRACK StatementList RBRACK ;
+
+StatementList ::= Statement SEMICOLON StatementList
+				| ;
+
+MethodDecl ::= FUNC LPAR ID ReceiverType RPAR ID Function ;
+
+Statement ::= Declaration
+			| SimpleStmt
+			| RETURN 
+			| RETURN ExpressionList
+			| Block
+			| IfStmt
+			| ForStmt ;
+
+SimpleStmt ::= Expression
+/*// Se desejarem adicionar incrementos
+		     | Expression PLUSPLUS
+			 | Expression MINUSMINUS  */
+			 | ExpressionList ASSIGN ExpressionList 
+			 | /*IdentifierList*/ ExpressionList DASSIGN ExpressionList
+			 | ; //EmptyStmt
+
+IfStmt ::= IF SimpleStmt SEMICOLON Expression Block ElseOpt
+		 | IF Expression Block ElseOpt;
+
+ElseOpt ::= ELSE IfStmt
+		  | ELSE Block ;
+
+ForStmt ::= FOR Expression Block
+		  | FOR SimpleStmt SEMICOLON SimpleStmt SEMICOLON SimpleStmt Block
+		  | FOR RANGE Expression Block
+		  | FOR /*IdentifierList*/ ExpressionList DASSIGN RANGE Expression Block
+		  | FOR ExpressionList ASSIGN RANGE Expression Block;
+
+// ~~ CUP-ECLIPSE:CONFLICT-RES-RR ~~ 
+ // After this the order of productions matters
+
+//Separated and moved by CUP Eclipse plugin
+Operand ::=  ID
+		  ;
+
+//Separated and moved by CUP Eclipse plugin
+LiteralType ::=  ID;
