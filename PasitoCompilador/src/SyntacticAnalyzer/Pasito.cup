@@ -49,13 +49,13 @@ scan with {:
 :};
 
 /* @@@@@@@@@@@@ terminais (tokens retornados pelo analisador léxico, utilizados para criar classe Symbol) @@@@@@@@@@@@ */
-terminal String ID;
+terminal List<String> ID;
 terminal DEFAULT, FUNC, INTERFACE,FALLTHROUGH, CASE, STRUCT, TYPE, ELSE, SWITCH, IF, CONST, VAR;
 terminal FOR, RETURN, RANGE;
 terminal BOOLEAN, TRUE, FALSE, INT32, FLOAT64;
 terminal Integer INT_NUMBER, NUMBER;
 terminal Float FLOAT_NUMBER;
-terminal PLUS, MINUS, TIMES, DIV, AND, EQ, NOT;
+terminal BinaryOperator PLUS, BinaryOperator MINUS, BinaryOperator TIMES, BinaryOperator DIV, BinaryOperator AND, BinaryOperator EQ, UnaryOperator NOT;
 terminal LPAR, RPAR, LT, LSBRACK, RSBRACK, LBRACK,
          RBRACK, ASSIGN, DASSIGN, COMMA, SEMICOLON, EXCL, DOTDOTDOT, COLON, DOT;
 
@@ -78,7 +78,7 @@ non terminal List<String> IdentifierList;
 non terminal Expression;
 non terminal ExpressionList;
 non terminal CompExpression, AddExpression, MultExpression;
-non terminal UnaryExpr, unary_op, PrimaryExpr, Slice, Arguments, Args;
+non terminal UnaryExpr, Unary_op, PrimaryExpr, Slice, Arguments, Args;
 non terminal VariadicCommaOp;
 non terminal Operand;
 non terminal CompositeLit,  Function, MethodExpr, LiteralType, LiteralValue;
@@ -178,29 +178,108 @@ Types ::=  ID COMMA Types
          | TypeLit COMMA
          | TypeLit ;
 
-IdentifierList ::= ID COMMA IdentifierList
-				 | ID ;
+IdentifierList ::= ID:thisId COMMA IdentifierList :idList
+				 {: 
+				 	idList.addAll(0,thisId);
+				 	RESULT = idList; 
+				 :}
+				 
+				 | ID:id 
+				 {:
+				 	RESULT = new LinkedList<>(id);
+				 :};
 
 ConstDecl ::=  CONST IdentifierList
 			 | CONST IdentifierList ASSIGN ExpressionList
 			 | CONST IdentifierList Type ASSIGN ExpressionList ;
 
 ExpressionList ::= ExpressionList COMMA Expression 
-				 | Expression;
+				 | Expression:e 
+				 	{:
+				 		RESULT = e; // Isso ta errado...
+				 	:};
 
-Expression ::= Expression PLUS Expression
-			 | Expression MINUS Expression
-			 | Expression TIMES Expression
-			 | Expression DIV Expression
-			 | Expression LT Expression
-			 | Expression EQ Expression
-			 | Expression AND Expression 
+Expression ::= Expression:left PLUS Expression:right 
+				 {: Expression e = new BinaryExpression(); 
+				 	e.leftExp = left;
+				 	e.op = BinaryOperator.PLUS;
+				 	e.rightExp =right ;
+
+				 	RESULT = e;
+				 :}
+
+			 | Expression:left MINUS Expression:right 
+				 {: Expression e = new BinaryExpression(); 
+				 	e.leftExp = left;
+				 	e.op = BinaryOperator.MINUS;
+				 	e.rightExp =right ;
+
+				 	RESULT = e;
+				 :}
+
+			 | Expression:left TIMES Expression:right 
+				 {: Expression e = new BinaryExpression(); 
+				 	e.leftExp = left;
+				 	e.op = BinaryOperator.TIMES;
+				 	e.rightExp =right ;
+
+				 	RESULT = e;
+				 :}
+
+			 | Expression:left DIV Expression:right 
+				 {: Expression e = new BinaryExpression(); 
+				 	e.leftExp = left;
+				 	e.op = BinaryOperator.DIV;
+				 	e.rightExp =right ;
+
+				 	RESULT = e;
+				 :}
+
+			 | Expression:left LT Expression:right 
+				 {: Expression e = new BinaryExpression(); 
+				 	e.leftExp = left;
+				 	e.op = BinaryOperator.LT;
+				 	e.rightExp =right ;
+
+				 	RESULT = e;
+				 :}
+
+			 | Expression:left EQ Expression:right 
+				 {: Expression e = new BinaryExpression(); 
+				 	e.leftExp = left;
+				 	e.op = BinaryOperator.EQ;
+				 	e.rightExp =right ;
+
+				 	RESULT = e;
+				 :}
+
+			 | Expression:left AND Expression:right 
+				 {: Expression e = new BinaryExpression(); 
+				 	e.leftExp = left;
+				 	e.op = BinaryOperator.AND;
+				 	e.rightExp =right ;
+
+				 	RESULT = e;
+				 :}
+
 			 | UnaryExpr ;			 
 
 UnaryExpr ::= PrimaryExpr
-			| unary_op UnaryExpr ;
+			| Unary_op:op UnaryExpr:e
+			{:
+				RESULT = new UnaryExpression(op,e); 
+			:}; /// fim da produção Unary_Expr
 
-unary_op ::= PLUS | MINUS | EXCL | TIMES ;
+Unary_op ::= PLUS
+			{:
+				RESULT =  UnaryOperator.PLUS; // ??????? 
+			:} 
+			| MINUS
+			{:
+				RESULT =  UnaryOperator.MINUS;  // ??????? 
+			:}  
+			| EXCL 
+			| TIMES ;
 
 PrimaryExpr ::= Operand
 			  | PrimaryExpr DOT ID
@@ -230,14 +309,14 @@ VariadicCommaOp ::= DOTDOTDOT
 	 | DOTDOTDOT COMMA
 	 | ;
 
-Operand ::= INT_NUMBER
-		  | FLOAT_NUMBER
-		  | TRUE
-		  | FALSE
+Operand ::= INT_NUMBER:n {: RESULT = new Integer(n);:} 
+		  | FLOAT_NUMBER:f {: RESULT = new Float(f);:} 
+		  | TRUE:t {: RESULT = new Boolean(true);:}
+		  | FALSE:f {: RESULT = new Boolean(false);:}
 		  | CompositeLit
 		  | FUNC Function 
 		  //| MethodExpr
-		  | LPAR Expression RPAR ;
+		  | LPAR Expression RPAR ; //
 
 CompositeLit ::= LiteralType LiteralValue;
 
