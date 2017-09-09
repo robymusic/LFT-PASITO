@@ -58,7 +58,8 @@ import java.io.FileInputStream;
         symbolFactory = sf;
     }
 	
-	 Symbol ultimo;
+	 public Symbol ultimo; 
+	 public String ultm ;
 
     /*
     * Retorna de sÃ­mbolos identificados pelo analisador lexico
@@ -73,6 +74,7 @@ import java.io.FileInputStream;
         ultimo = symbolFactory.newSymbol(nome, code,
                             new Location(yyline+1, yycolumn+1, yychar),
                             new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));
+        ultm = yytext();
         return ultimo;
     }
 	
@@ -83,7 +85,8 @@ import java.io.FileInputStream;
 		ultimo = symbolFactory.newSymbol(nome, code,
                             new Location(yyline+1, yycolumn+1, yychar),
                             new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));
-		return ultimo;
+		ultm = yytext();
+        return ultimo;
     }
     
     	public Symbol symbol(String nome, int code, String val) {
@@ -93,7 +96,8 @@ import java.io.FileInputStream;
         ultimo = symbolFactory.newSymbol(nome, code,
                             new Location(yyline+1, yycolumn+1, yychar),
                             new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));
-		return ultimo;
+		ultm = yytext();
+        return ultimo;
 	}
 
     /*
@@ -109,13 +113,13 @@ import java.io.FileInputStream;
 // início das expressões regulares que vão definir a classe de palavras identificadas (lembrem do automato)
 
 /* Básico */
-Newline = \n | \r| \r\n // fim de linha // era = LineTerminator
-Whitespace = {Newline} |[\t|\f| ]  // espaco em branco era =  WhiteSpace
+Newline = \n|\r|\n\r // fim de linha // era = LineTerminator
+Whitespace = [ \t\f] | {Newline}  // espaco em branco era =  WhiteSpace
 Number = [0-9]+ //era = Digit
 
 /* Comentarios */
 Comment = {TraditionalComment} | {EndOfLineComment} // era: Comment = {LineComment}|{BlockComment}
-EndOfLineComment = "//" [^\r\n]* {Newline} // era: LineComment = ("//")++{LineTerminator} //Comentario Simples
+EndOfLineComment = "//"[^\r\n]* {Newline} // era: LineComment = ("//")++{LineTerminator} //Comentario Simples
 TraditionalComment = "/*" {CommentContent} \*+ "/" 
 CommentContent = ( [^*] | \*+[^*/] )* // BlockComment = ("/**") //+(?)+("**/") // Bloco de comentarios
 
@@ -134,8 +138,8 @@ ident = ([:jletter:] | "_" ) ([:jletterdigit:] | [:jletter:] | "_" )* // era: Id
 Int_Number = 0|[1-9]|[1-9]+{Number}+
 Float_Number = {Number}+"."{Number}* | {Number}* "." {Number}+
 
-Int32 = Int_Number;
-Float64= Float_Number;
+Int32 = "Int32";
+Float64= "Float64";
 
 True = "true"
 False = "false"
@@ -235,6 +239,20 @@ Range = "range"
 // inÃ­cio das aÃ§Ãµes de retorno
 <YYINITIAL> {
     {Ignore}                    { }
+    {Whitespace}				{ }
+    
+    {Newline}					{        											
+    							{ if (ultimo == ID) return symbol(SEMICOLON); }
+								{ if (ultimo == INT_NUMBER) return symbol(SEMICOLON); }
+								{ if (ultimo == FLOAT_NUMBER) return symbol(SEMICOLON); }
+								{ if (ultimo == Fallthrough) return symbol(SEMICOLON); }
+								{ if (ultimo == Return) return symbol(SEMICOLON); }
+								{ if (ultimo == Plus) return symbol(SEMICOLON); } 
+								{ if (ultimo == Minus) return symbol(SEMICOLON); }								
+								{ if (ultimo == RBRACK) return symbol(SEMICOLON); }
+								{ if (ultimo == RSBRACK) return symbol(SEMICOLON); }
+								{ if (ultimo == RPAR) return symbol(SEMICOLON); }
+								}	
 
     {Plus}                      { return symbol("PLUS", PLUS); }
     {Minus}			            { return symbol("MINUS", MINUS); }
@@ -254,7 +272,7 @@ Range = "range"
     {Dot}			            { return symbol("DOT", DOT); }
     {DotDotDot}		            { return symbol("DOTDOTDOT", DOTDOTDOT); }
     {Comma}		        	    { return symbol("COMMA", COMMA); }
-    {Semicolon}                 { return symbol("SEMICOLON", SEMICOLON); }
+    {Semicolon}                 { return symbol("SEMICOLON", SEMICOLON, (yytext()) ); }
     {LPAR} 						{ return symbol("LPAR", LPAR); }
 	{RPAR} 						{ return symbol("RPAR", RPAR); }
     {LSBRACK}					{ return symbol("LSBRACK", LSBRACK); }
@@ -281,7 +299,7 @@ Range = "range"
     {Return}					{ return symbol("RETURN", RETURN, (yytext())); }
    	
     {Float_Number}              { return symbol("FLOAT_NUMBER", FLOAT_NUMBER , new Float(yytext())); }   
-    {Int_Number}                { return symbol("INT_NUMBER", INT_NUMBER , new Integer(yytext())); }
+    {Int_Number}                { return symbol("INT_NUMBER", INT_NUMBER , new Integer(Integer.parseInt(yytext()))); }
 	{Int32} 					{ return symbol("INT32", INT32, (yytext()) ); }
 	{Float64}					{ return symbol("FLOAT64", FLOAT64, (yytext()) ); }	
 	
@@ -293,17 +311,9 @@ Range = "range"
 	{ident}						{ return symbol("ID", ID, (yytext())); }
 								
   // Retorna o "ponto e virgula" nos casos onde não são colocados  
-    {Newline}  		            {{ if (ultimo == ID) return SEMICOLON; }
-								{ if (ultimo == INT_NUMBER) return SEMICOLON; }
-								{ if (ultimo == FLOAT_NUMBER) return SEMICOLON; }
-								{ if (ultimo == Fallthrough) return SEMICOLON; }
-								{ if (ultimo == Return) return SEMICOLON; }
-								{ if (ultimo == Plus) return SEMICOLON; } 
-								{ if (ultimo == Minus) return SEMICOLON; }								
-								{ if (ultimo == RBRACE) return SEMICOLON; }
-								{ if (ultimo == RBRACKET) return SEMICOLON; }
-								{ if (ultimo == RPAREN) return SEMICOLON; }}	
-
+  	    
+   
+    
 
 // aviso de erro
 	.|\n						{ emit_warning("Caracter não reconhecido '" + yytext() + "' -- ignorado"); }

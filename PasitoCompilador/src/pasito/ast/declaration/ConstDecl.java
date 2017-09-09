@@ -1,8 +1,11 @@
 package pasito.ast.declaration;
 
+import java.util.LinkedList;
+
 import pasito.ast.PasitoVisitor;
 import pasito.ast.expression.Expression;
 import pasito.ast.type.Type;
+import pasito.ast.topLevelDecl.TopLevelDecl;
 
 /**
  * Created by ariel on 20/08/17.
@@ -17,6 +20,7 @@ public class ConstDecl extends Declaration{
         this.name = name;
         this.type = type;
         this.exp = exp;
+        
     }
 
     @Override

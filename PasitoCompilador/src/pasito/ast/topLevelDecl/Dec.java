@@ -8,9 +8,11 @@ import pasito.ast.declaration.Declaration;
  */
 public class Dec extends TopLevelDecl {
     public Declaration decl;
-
+   
+    
     public Dec(Declaration decl) {
         this.decl = decl;
+       
     }
 
     @Override

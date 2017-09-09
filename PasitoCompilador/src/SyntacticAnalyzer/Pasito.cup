@@ -26,7 +26,7 @@ parser code {:
 init with {:
     ComplexSymbolFactory f = new ComplexSymbolFactory(); // cria instância do ComplexSymbolFactory
     symbolFactory = f;	
- 	 File file = new File("input.txt");
+ 	 File file = new File("Teste.Pasito");
  	 FileInputStream fis = null;
   try {
     fis = new FileInputStream(file);
@@ -61,14 +61,16 @@ terminal LPAR, RPAR, LT, LSBRACK, RSBRACK, LBRACK,
 
 non terminal Program Program;
 non terminal List<TopLevelDecl> TopLevelDecl;
-non terminal List<Declaration> Declaration;
-non terminal FunctionDecl, MethodDecl; 
-non terminal ConstDecl;
+non terminal List<TopLevelDecl> Declaration;
+non terminal List<TopLevelDecl> FunctionDecl; 
+non terminal List<TopLevelDecl> MethodDecl; 
+non terminal List<Declaration> ConstDecl; 
 non terminal List<VarDecl> VarDecl;
-non terminal TypeDecl;
+non terminal List<Type> TypeDecl;
 non terminal Type Type;
-non terminal TypeSpecList;
-non terminal TypeLit, ArrayType, StructType, SliceType;
+non terminal List<Type> TypeSpecList;
+non terminal List<Type> TypeLit; // PAREI AQUI
+non terminal ArrayType, StructType, SliceType;
 non terminal FieldDecl, FieldDeclList;
 non terminal MethodSpec, MethodSpecList;
 non terminal Signature, Parameters, Resul;
@@ -100,21 +102,49 @@ Program ::= TopLevelDecl : topDecs SEMICOLON Program : prog
 		  | {: RESULT = new Program(new LinkedList<>()); :} 
 		    ;
 			
-TopLevelDecl ::=  Declaration
-				| FunctionDecl
-				| MethodDecl ;
+TopLevelDecl ::=  Declaration : decl
+				{: RESULT = decl; :} 
+				| FunctionDecl : func
+				{: RESULT  = func; :}
+				| MethodDecl : method
+				{: RESULT  = method; :} 
+				;
 
-Declaration ::= ConstDecl
-			  | VarDecl 
-			  | TypeDecl;
+Declaration ::= ConstDecl : constDecl	
+			   {: List<TopLevelDecl> tld =  new LinkedList<>();
+				  tld.add((TopLevelDecl)constDecl);
+				 RESULT = tld;
+			  :}		 
+			  | VarDecl : varDecl
+			  {: List<TopLevelDecl> tld =  new LinkedList<>();
+				  tld.add((TopLevelDecl) varDecl);
+				 RESULT = tld;
+			  :}
+			  | TypeDecl : typeDecl 
+			  {: List<TopLevelDecl> tld =  new LinkedList<>();
+				  tld.add((TopLevelDecl) typeDecl);
+				 RESULT = tld;
+			  :}
+			  ;
 
-TypeDecl ::= TYPE ID Type
-           | TYPE LPAR TypeSpecList RPAR;
+TypeDecl ::= TYPE ID Type :typeDecl
+			{:  List<Type> tp = new LinkedList<>();
+				tp.add(typeDecl);
+				RESULT = tp;	:}
+           | TYPE LPAR TypeSpecList : typeDecls RPAR
+           {:	
+				RESULT = typeDecls;	 :}
+           ;
 
-TypeSpecList ::=  ID Type SEMICOLON TypeSpecList
-				| ;
+TypeSpecList ::=  ID Type: type SEMICOLON TypeSpecList : types
+				{:					
+					types.add(0,type);
+					RESULT = types;
+					
+				:}
+				| {: RESULT = new LinkedList<>(); :};
 
-Type ::=  ID 
+Type ::=  ID : id {: RESULT = new TypeName(id); :}
 		| TypeLit;
 
 TypeLit ::= ArrayType 
@@ -178,10 +208,26 @@ Types ::=  ID COMMA Types
          | TypeLit COMMA
          | TypeLit ;
 
-IdentifierList ::= ID COMMA IdentifierList
-				 | ID ;
+IdentifierList ::= ID COMMA IdentifierList : ids
+				{: List name = new LinkedList<String>(); 
+			   		for (String id: ids)
+						name.add(id);
+					RESULT = name;
+				:}
+				 | ID : id
+				 {:	
+					List name = new LinkedList<String>();
+					name.add(id);				
+					RESULT = name;
+				 :}
+				  ;
 
-ConstDecl ::=  CONST IdentifierList
+ConstDecl ::=  CONST IdentifierList : ids
+			{: List<Declaration> constDecls = new LinkedList<>(); 
+			   for (String id: ids)
+					constDecls.add(new ConstDecl(id, null, null));
+				RESULT = constDecls;
+			:}
 			 | CONST IdentifierList ASSIGN ExpressionList
 			 | CONST IdentifierList Type ASSIGN ExpressionList ;
 

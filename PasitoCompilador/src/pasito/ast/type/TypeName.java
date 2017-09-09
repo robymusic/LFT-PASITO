@@ -10,6 +10,7 @@ public class TypeName extends Type{
 
     public TypeName(String name) {
         this.name = name;
+        
     }
 
     @Override

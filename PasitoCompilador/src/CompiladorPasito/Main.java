@@ -21,8 +21,8 @@ import java_cup.runtime.SymbolFactory;
 
 public class Main {
 	public static void main(String[] args) {
-		/*String caminho = Paths.get("").toAbsolutePath().toString();
-		String codigoFonte = caminho + "/src/Teste.Pasito";
+		String caminho = Paths.get("").toAbsolutePath().toString();
+		String codigoFonte = caminho + "/Teste.Pasito";
 	
 		ComplexSymbolFactory f = new ComplexSymbolFactory(); // cria instância do ComplexSymbolFactory
 
@@ -47,14 +47,7 @@ public class Main {
 			
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}  
-		Parser p = new Parser();
-		try {
-			p.debug_parse();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
+		} 	
 				
 	}
 }
