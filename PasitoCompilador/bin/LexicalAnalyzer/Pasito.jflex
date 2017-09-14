@@ -6,7 +6,7 @@ import java.io.IOException;
 import java_cup.runtime.Symbol;
 import SyntacticAnalyzer.sym;
 import java.io.FileInputStream;
-
+import java.util.regex.Pattern;
 
 %%
 
@@ -58,9 +58,8 @@ import java.io.FileInputStream;
         symbolFactory = sf;
     }
 	
-	 public Symbol ultimo; 
-	 public String ultm ;
-
+	 public Symbol ultimo;
+	 public String tok;
     /*
     * Retorna de sÃ­mbolos identificados pelo analisador lexico
     * O simbolo retornado Ã© um objeto da classe ComplexSymbolFactory implementada pelo CUP
@@ -74,8 +73,9 @@ import java.io.FileInputStream;
         ultimo = symbolFactory.newSymbol(nome, code,
                             new Location(yyline+1, yycolumn+1, yychar),
                             new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));
-        ultm = yytext();
-        return ultimo;
+                                  
+       tok = yytext();
+       return ultimo;
     }
 	
 	public Symbol symbol(String nome, int code, Object val) {
@@ -84,9 +84,10 @@ import java.io.FileInputStream;
     	
 		ultimo = symbolFactory.newSymbol(nome, code,
                             new Location(yyline+1, yycolumn+1, yychar),
-                            new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));
-		ultm = yytext();
-        return ultimo;
+                            new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));                            
+        
+	    tok = yytext();
+	    return ultimo;
     }
     
     	public Symbol symbol(String nome, int code, String val) {
@@ -96,8 +97,9 @@ import java.io.FileInputStream;
         ultimo = symbolFactory.newSymbol(nome, code,
                             new Location(yyline+1, yycolumn+1, yychar),
                             new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));
-		ultm = yytext();
-        return ultimo;
+                                    
+		tok = yytext();
+		return ultimo;
 	}
 
     /*
@@ -107,6 +109,8 @@ import java.io.FileInputStream;
         System.out.println("lexicalAnalyzer warning: " + message + " at : 2 "+
                 (yyline+1) + " " + (yycolumn+1) + " " + yychar);
     }
+    
+    
 %}
 // fim do código Java (esse código será criado no arquivo exatamente da forma escrita acima)
 
@@ -114,12 +118,12 @@ import java.io.FileInputStream;
 
 /* Básico */
 Newline = \n|\r|\n\r // fim de linha // era = LineTerminator
-Whitespace = [ \t\f] | {Newline}  // espaco em branco era =  WhiteSpace
+Whitespace = [ \t\f] //| {Newline}  // espaco em branco era =  WhiteSpace
 Number = [0-9]+ //era = Digit
 
 /* Comentarios */
 Comment = {TraditionalComment} | {EndOfLineComment} // era: Comment = {LineComment}|{BlockComment}
-EndOfLineComment = "//"[^\r\n]* {Newline} // era: LineComment = ("//")++{LineTerminator} //Comentario Simples
+EndOfLineComment = "//"[^\r\n]*{Newline} // era: LineComment = ("//")++{LineTerminator} //Comentario Simples
 TraditionalComment = "/*" {CommentContent} \*+ "/" 
 CommentContent = ( [^*] | \*+[^*/] )* // BlockComment = ("/**") //+(?)+("**/") // Bloco de comentarios
 
@@ -198,10 +202,10 @@ Comma = "," // vÃ­rgula
 Semicolon = ";" // ponto e virgula
 LPAR =  "(" // parantese abrindo
 RPAR =  ")" // parentese fechando
-LSBRACK =  "{" // chaves abrindo
-RSBRACK =  "}" // chaves fechando
-LBRACK =  "[" // colchete abrindo
-RBRACK =  "]" // colchete fechando
+LSBRACK =  "[" // chaves abrindo
+RSBRACK =  "]" // chaves fechando
+LBRACK =  "{" // colchete abrindo
+RBRACK =  "}" // colchete fechando
 Colon = ":" // dois pontos
 
 
@@ -241,18 +245,19 @@ Range = "range"
     {Ignore}                    { }
     {Whitespace}				{ }
     
-    {Newline}					{        											
-    							{ if (ultimo == ID) return symbol(SEMICOLON); }
-								{ if (ultimo == INT_NUMBER) return symbol(SEMICOLON); }
-								{ if (ultimo == FLOAT_NUMBER) return symbol(SEMICOLON); }
-								{ if (ultimo == Fallthrough) return symbol(SEMICOLON); }
-								{ if (ultimo == Return) return symbol(SEMICOLON); }
-								{ if (ultimo == Plus) return symbol(SEMICOLON); } 
-								{ if (ultimo == Minus) return symbol(SEMICOLON); }								
-								{ if (ultimo == RBRACK) return symbol(SEMICOLON); }
-								{ if (ultimo == RSBRACK) return symbol(SEMICOLON); }
-								{ if (ultimo == RPAR) return symbol(SEMICOLON); }
-								}	
+    {Newline}					{ 	String num = "[-]?\\d*[.]?\\d+";
+    								String id = "\\b[_a-zA-Z][_a-zA-Z0-9]*\\b";
+    								System.out.println("Ultimo: "+tok);
+    								if ( Pattern.matches(num, tok )){ return symbol("SEMICOLON",SEMICOLON);}
+    								if ( Pattern.matches(id, tok )){ return symbol("SEMICOLON",SEMICOLON);}
+    								if ( tok.equals("return")){ return symbol("SEMICOLON",SEMICOLON);}
+    								if ( tok.equals("}")){ return symbol("SEMICOLON",SEMICOLON);}
+    								if ( tok.equals("]")){ return symbol("SEMICOLON",SEMICOLON);}
+    								if ( tok.equals(")")){ return symbol("SEMICOLON",SEMICOLON);}
+    								if ( tok.equals("fallthrough")){ return symbol("SEMICOLON",SEMICOLON);}    								
+    							} 
+    							       											
+    						
 
     {Plus}                      { return symbol("PLUS", PLUS); }
     {Minus}			            { return symbol("MINUS", MINUS); }
@@ -261,7 +266,7 @@ Range = "range"
 	
     //{Assign}					{ return symbol("ASSIGN", ASSIGN); }
 	{Assign}					{ return symbol("ASSIGN", ASSIGN); }
-	{DAssign}   				{ return symbol("DASSIGN", DASSIGN); }
+	{DAssign}   				{ return symbol("DASSIGN", DASSIGN, (yytext())); }
 	
 	// {Op_Logic}					{ return symbol("OP_LOGIC", OP_LOGIC); }
     {And}				       	{ return symbol("AND", AND); }
@@ -283,7 +288,7 @@ Range = "range"
     {Colon}						{ return symbol("COLON", COLON); }
     
     {Default}					{ return symbol("DEFAULT", DEFAULT); }
-    {Func}				      	{ return symbol("FUNC", FUNC); }
+    {Func}				      	{ return symbol("FUNC", FUNC, (yytext()) ); }
     {For}                       { return symbol("FOR", FOR); }
     {If}                        { return symbol("IF", IF); }
     {Else}						{ return symbol("ELSE", ELSE); }
@@ -293,7 +298,7 @@ Range = "range"
     {Interface}                 { return symbol("INTERFACE", INTERFACE); }
     {Type}                      { return symbol("TYPE", TYPE); }
     {If}                        { return symbol("IF", IF); }
-    {Var}                       { return symbol("VAR", VAR); }
+    {Var}                       { return symbol("VAR", VAR, (yytext())); }
     {Const}						{ return symbol("CONST", CONST); }
     {Case}                      { return symbol("CASE",CASE); }
     {Return}					{ return symbol("RETURN", RETURN, (yytext())); }

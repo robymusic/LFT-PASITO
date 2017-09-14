@@ -283,7 +283,9 @@ Operand ::= INT_NUMBER
 		  | CompositeLit
 		  | FUNC Function 
 		  //| MethodExpr
-		  | LPAR Expression RPAR ;
+		  | LPAR Expression RPAR 
+		  
+		  ;
 
 CompositeLit ::= LiteralType LiteralValue;
 
@@ -323,8 +325,8 @@ VarDecl ::= VAR VarSpec : varDecls
 		  
 VarSpecList ::= VarSpecList : varDecls1 VarSpec : varDecls2 SEMICOLON
 				{: varDecls1.addAll(varDecls2); 
-				   RESULT = varDecls1; :} 
-			  | {: RESULT = new LinkedList<>(); :} ;
+				   RESULT = varDecls1; :}  
+			  | {: RESULT = new LinkedList<>(); :} ; 
 
 VarSpec ::= IdentifierList : ids Type : type
 			{: List<VarDecl> varDecls = new LinkedList<>(); 
@@ -366,7 +368,8 @@ IfStmt ::= IF SimpleStmt SEMICOLON Expression Block ElseOpt
 		 | IF Expression Block ElseOpt;
 
 ElseOpt ::= ELSE IfStmt
-		  | ELSE Block ;
+		  | ELSE Block 
+		  |;
 
 ForStmt ::= FOR Expression Block
 		  | FOR SimpleStmt SEMICOLON SimpleStmt SEMICOLON SimpleStmt Block
@@ -378,8 +381,10 @@ ForStmt ::= FOR Expression Block
  // After this the order of productions matters
 
 //Separated and moved by CUP Eclipse plugin
-Operand ::=  ID
-		  ;
+Operand ::=  ID;
 
 //Separated and moved by CUP Eclipse plugin
 LiteralType ::=  ID;
+
+
+
