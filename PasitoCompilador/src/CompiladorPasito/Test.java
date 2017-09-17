@@ -1,6 +1,8 @@
 package CompiladorPasito;
 
 import java.text.Format;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 import java_cup.runtime.ComplexSymbolFactory;
@@ -31,7 +33,7 @@ public static void main(String argv[]) {
 	// [.]? com ou sem ponto
 	// \d+ um ou mais números
 	String p = "\\b[_a-zA-Z][_a-zA-Z0-9]*\\b";
-	s1.equals("return");
+	if(!s1.equals(null)) 
 	
 	// compara cada String com o padrão "p"
 	System.out.println( Pattern.matches( p, s1 ) );
@@ -40,5 +42,10 @@ public static void main(String argv[]) {
 	System.out.println( Pattern.matches( p, s4 ) );
 	System.out.println( Pattern.matches( p, s5 ) );
 	System.out.println( Pattern.matches( p, s6 ) );
-}
-}
+	LinkedList<BesteBola> bb = new LinkedList<>(); 
+	LinkedList<String> td = new LinkedList<>(); 
+	Iterator<BesteBola> it = bb.iterator();
+		while (it.hasNext()) {
+		td.add(it.next().nome);  
+		}
+}}

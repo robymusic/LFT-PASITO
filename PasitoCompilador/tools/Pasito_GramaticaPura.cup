@@ -61,61 +61,35 @@ terminal LPAR, RPAR, LT, LSBRACK, RSBRACK, LBRACK,
 
 non terminal Program Program;
 non terminal List<TopLevelDecl> TopLevelDecl;
-non terminal List<Declaration> Declaration;
+non terminal List<TopLevelDecl> Declaration;
 non terminal List<TopLevelDecl> FunctionDecl; 
 non terminal List<TopLevelDecl> MethodDecl; 
 non terminal List<Declaration> ConstDecl; 
-non terminal List<Declaration> VarDecl;
-non terminal List<Declaration> TypeDecl;
+non terminal List<VarDecl> VarDecl;
+non terminal List<Type> TypeDecl;
 non terminal Type Type;
 non terminal List<Type> TypeSpecList;
-non terminal Type TypeLit; // PAREI AQUI
-non terminal ArrayType;
-non terminal StructType;
-non terminal SliceType;
-non terminal FieldDecl;
-non terminal FieldDeclList;
-non terminal MethodSpec;
-non terminal MethodSpecList;
-non terminal Signature; 
-non terminal Parameters;
-non terminal Resul;
-non terminal ParameterList;
-non terminal ParameterDeclList;
-non terminal TypeList;
-non terminal Types;
+non terminal List<Type> TypeLit; // PAREI AQUI
+non terminal ArrayType, StructType, SliceType;
+non terminal FieldDecl, FieldDeclList;
+non terminal MethodSpec, MethodSpecList;
+non terminal Signature, Parameters, Resul;
+non terminal ParameterList, ParameterDeclList;
+non terminal TypeList, Types;
 non terminal List<String> IdentifierList;
 non terminal Expression;
 non terminal ExpressionList;
-non terminal CompExpression;
-non terminal AddExpression;
-non terminal MultExpression;
-non terminal UnaryExpr;
-non terminal unary_op;
-non terminal PrimaryExpr;
-non terminal Slice;
-non terminal Arguments;
-non terminal Args;
+non terminal CompExpression, AddExpression, MultExpression;
+non terminal UnaryExpr, unary_op, PrimaryExpr, Slice, Arguments, Args;
 non terminal VariadicCommaOp;
 non terminal Operand;
-non terminal CompositeLit;
-non terminal Function;
-non terminal MethodExpr;
-non terminal LiteralType;
-non terminal LiteralValue;
+non terminal CompositeLit,  Function, MethodExpr, LiteralType, LiteralValue;
 non terminal ReceiverType;
-non terminal Element;
-non terminal ElementList;
-non terminal KeyedElement;
+non terminal Element, ElementList, KeyedElement;
 non terminal List<VarDecl> VarSpec; 
-non terminal List<VarDecl> VarSpecList;
-non terminal Block;
-non terminal Statement;
-non terminal StatementList;
-non terminal SimpleStmt;
-non terminal ForStmt;
-non terminal IfStmt;
-non terminal ElseOpt;
+non terminal VarSpecList;
+non terminal Block, Statement, StatementList, SimpleStmt, ForStmt;
+non terminal IfStmt, ElseOpt;
 
 /* Precedences */
 precedence left AND;
@@ -123,72 +97,57 @@ precedence left LT, EQ;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
 
-Program ::= TopLevelDecl  : topDecs SEMICOLON Program : prog
-           //  {: prog.declarations.addAll(0,topDecs);
-           //   RESULT = prog; :}
-		  |  {: RESULT = new Program(new LinkedList<>()); :} 
+Program ::= TopLevelDecl  /*: topDecs*/ SEMICOLON Program //: prog
+             //{: prog.declarations.addAll(0,topDecs);
+             // RESULT = prog; :}
+		  |  //{: RESULT = new Program(new LinkedList<>()); :} 
 		    ;
 			
-TopLevelDecl ::=  Declaration  : decl
-				{: 
-					List<TopLevelDecl> tld = new LinkedList<>();
-					Iterator<Declaration> it = decl.iterator();
-					while(it.hasNext())
-						tld.add( (TopLevelDecl) (new Dec(it.next()) ));
-					RESULT = tld; 
-				:} 
-				| FunctionDecl : func
-				 {: RESULT  = func; :}
-				| MethodDecl  : method
-				 {: RESULT  = method; :} 
+TopLevelDecl ::=  Declaration // : decl
+				// {: RESULT = decl; :} 
+				| FunctionDecl // : func
+				// {: RESULT  = func; :}
+				| MethodDecl // : method
+				// {: RESULT  = method; :} 
 				;
 
-Declaration ::= ConstDecl  : constDecl	
-			   {: 				
-				RESULT = constDecl;
-			  :}		 
-			  | VarDecl : varDecl
-			  {:
-				 RESULT = varDecl;
-			  :}
-			  | TypeDecl : typeDecl 
-			  {: 
-				 RESULT = typeDecl;
-			  :}
+Declaration ::= ConstDecl /* : constDecl	
+			   {: List<TopLevelDecl> tld =  new LinkedList<>();
+				  tld.add((TopLevelDecl)constDecl);
+				 RESULT = tld;
+			  :}		 */
+			  | VarDecl /*: varDecl
+			  {: List<TopLevelDecl> tld =  new LinkedList<>();
+				  tld.add((TopLevelDecl) varDecl);
+				 RESULT = tld;
+			  :}*/
+			  | TypeDecl /*: typeDecl 
+			  {: List<TopLevelDecl> tld =  new LinkedList<>();
+				  tld.add((TopLevelDecl) typeDecl);
+				 RESULT = tld;
+			  :}*/
 			  ;
 
-TypeDecl ::= TYPE ID Type :typeD
-			{: 	
-				List<Declaration> td = new LinkedList<>(); 
-				td.add( (Declaration) (new TypeDecl("",typeD)));						
-				RESULT = td;	
-			:}
-				
-           | TYPE LPAR TypeSpecList : typeDecls RPAR
-           {:	
-				List<Declaration> td = new LinkedList<>(); 
-				Iterator<Type> it = typeDecls.iterator();
-   				while (it.hasNext()) 
-					td.add( (Declaration) (new TypeDecl("",it.next())));			   				
-			   RESULT = td;	 
-			:} 
+TypeDecl ::= TYPE ID Type /*:typeDecl
+			{:  List<Type> tp = new LinkedList<>();
+				tp.add(typeDecl);
+				RESULT = tp;	:}*/
+           | TYPE LPAR TypeSpecList /*: typeDecls*/ RPAR
+           /*{:	
+				RESULT = typeDecls;	 :}*/
            ;
 
-TypeSpecList ::=  ID Type : type SEMICOLON TypeSpecList  : types
+TypeSpecList ::=  ID Type /*: type*/ SEMICOLON TypeSpecList /* : types
 				{:					
 					types.add(0,type);
 					RESULT = types;
 					
-				:}
-				| {: RESULT = new LinkedList<>(); :}
+				:}*/
+				| //{: RESULT = new LinkedList<>(); :}
 				;
 
-Type ::=  ID : id {: RESULT = new TypeName(id); :}
-		| TypeLit : Tlit
-		{:
-			RESULT = Tlit; // verificar o retorno de Type e TypeLit
-		:}
-		;
+Type ::=  ID //: id {: RESULT = new TypeName(id); :}
+		| TypeLit;
 
 TypeLit ::= ArrayType 
 		  | StructType
@@ -251,26 +210,26 @@ Types ::=  ID COMMA Types
          | TypeLit COMMA
          | TypeLit ;
 
-IdentifierList ::= ID COMMA IdentifierList  : ids
+IdentifierList ::= ID COMMA IdentifierList /* : ids
 				{: List name = new LinkedList<String>(); 
 			   		for (String id: ids)
 						name.add(id);
 					RESULT = name;
-				:}
-				 | ID : id
+				:}*/
+				 | ID /*: id
 				 {:	
 					List name = new LinkedList<String>();
 					name.add(id);				
 					RESULT = name;
-				 :}
+				 :}*/
 				  ;
 
-ConstDecl ::=  CONST IdentifierList : ids // Professor que fez
-			{: List<Declaration> constDecls = new LinkedList<>(); 
+ConstDecl ::=  CONST IdentifierList //: ids
+			/*{: List<Declaration> constDecls = new LinkedList<>(); 
 			   for (String id: ids)
 					constDecls.add(new ConstDecl(id, null, null));
 				RESULT = constDecls;
-			:}
+			:}*/
 			 | CONST IdentifierList ASSIGN ExpressionList
 			 | CONST IdentifierList Type ASSIGN ExpressionList ;
 
@@ -361,34 +320,24 @@ ReceiverType ::= ID
 			   | LPAR TIMES ID LPAR
 			   | LPAR ReceiverType RPAR ;
 
-VarDecl ::= VAR VarSpec : varDecl // eu que fiz
-			{:
-				List<Declaration> varD = new LinkedList<>();
-				varD.add((Declaration) varDecl); 
-				RESULT = varD; 
-			:}  
-		  | VAR  LPAR VarSpecList  : varDecls RPAR // eu que fiz
-		    {:
-				List<Declaration> varDec = new LinkedList<>();
-				Iterator<VarDecl> it = varDecls.iterator();
-				while(it.hasNext());
-					varDec.add(it.next()); 
-				RESULT = varDec; 
-			:} 
+VarDecl ::= VAR VarSpec //: varDecls
+		//	{: RESULT = varDecls; :} 
+		  | VAR  LPAR VarSpecList /* : varDecls*/ RPAR
+		    /*{: RESULT = varDecls; :}*/  
 		    ;
 		  
-VarSpecList ::= VarSpecList : varDecls1 VarSpec : varDecls2 SEMICOLON // professor que fez
+VarSpecList ::= VarSpecList /*: varDecls1*/ VarSpec /*: varDecls2 SEMICOLON
 				{: varDecls1.addAll(varDecls2); 
-				   RESULT = varDecls1; :}  
-			  | {: RESULT = new LinkedList<>(); :} 
+				   RESULT = varDecls1; :}  */
+			  | /*{: RESULT = new LinkedList<>(); :}*/ 
 			  ; 
 
-VarSpec ::= IdentifierList : ids Type : type // professor que fez
+VarSpec ::= IdentifierList /*: ids*/ Type /*: type
 			{: List<VarDecl> varDecls = new LinkedList<>(); 
 			   for (String id: ids)
 					varDecls.add(new VarDecl(id, type, null));
 			   RESULT = varDecls;
-			:}
+			:}*/
 		  | IdentifierList ASSIGN ExpressionList
 		  | IdentifierList Type ASSIGN ExpressionList ;
 

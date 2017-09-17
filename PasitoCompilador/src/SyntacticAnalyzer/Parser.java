@@ -757,9 +757,7 @@ class CUP$Parser$actions {
 		Location progxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location progxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
 		Program prog = (Program)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG3
- prog.declarations.addAll(0,topDecs);
-               RESULT = prog; 
+
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Program",0, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;
@@ -782,7 +780,7 @@ class CUP$Parser$actions {
           case 2: // Program ::= 
             {
               Program RESULT =null;
-		//@@CUPDBG4
+		//@@CUPDBG3
  RESULT = new Program(new LinkedList<>()); 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Program",0, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -794,9 +792,15 @@ class CUP$Parser$actions {
               List<TopLevelDecl> RESULT =null;
 		Location declxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location declxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
-		List<TopLevelDecl> decl = (List<TopLevelDecl>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG5
- RESULT = decl; 
+		List<Declaration> decl = (List<Declaration>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
+		//@@CUPDBG4
+ 
+					List<TopLevelDecl> tld = new LinkedList<>();
+					Iterator<Declaration> it = decl.iterator();
+					while(it.hasNext())
+						tld.add( (TopLevelDecl) (new Dec(it.next()) ));
+					RESULT = tld; 
+				
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TopLevelDecl",1, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;
@@ -808,7 +812,7 @@ class CUP$Parser$actions {
 		Location funcxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location funcxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
 		List<TopLevelDecl> func = (List<TopLevelDecl>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG6
+		//@@CUPDBG5
  RESULT  = func; 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TopLevelDecl",1, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -821,7 +825,7 @@ class CUP$Parser$actions {
 		Location methodxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location methodxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
 		List<TopLevelDecl> method = (List<TopLevelDecl>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG7
+		//@@CUPDBG6
  RESULT  = method; 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TopLevelDecl",1, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -830,14 +834,13 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 6: // Declaration ::= ConstDecl 
             {
-              List<TopLevelDecl> RESULT =null;
+              List<Declaration> RESULT =null;
 		Location constDeclxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location constDeclxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
 		List<Declaration> constDecl = (List<Declaration>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG8
- List<TopLevelDecl> tld =  new LinkedList<>();
-				  tld.add((TopLevelDecl)constDecl);
-				 RESULT = tld;
+		//@@CUPDBG7
+ 				
+				RESULT = constDecl;
 			  
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Declaration",2, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -846,14 +849,13 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 7: // Declaration ::= VarDecl 
             {
-              List<TopLevelDecl> RESULT =null;
+              List<Declaration> RESULT =null;
 		Location varDeclxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location varDeclxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
-		List<VarDecl> varDecl = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG9
- List<TopLevelDecl> tld =  new LinkedList<>();
-				  tld.add((TopLevelDecl) varDecl);
-				 RESULT = tld;
+		List<Declaration> varDecl = (List<Declaration>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
+		//@@CUPDBG8
+
+				 RESULT = varDecl;
 			  
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Declaration",2, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -862,14 +864,13 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 8: // Declaration ::= TypeDecl 
             {
-              List<TopLevelDecl> RESULT =null;
+              List<Declaration> RESULT =null;
 		Location typeDeclxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location typeDeclxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
-		List<Type> typeDecl = (List<Type>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG10
- List<TopLevelDecl> tld =  new LinkedList<>();
-				  tld.add((TopLevelDecl) typeDecl);
-				 RESULT = tld;
+		List<Declaration> typeDecl = (List<Declaration>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
+		//@@CUPDBG9
+ 
+				 RESULT = typeDecl;
 			  
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Declaration",2, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -878,14 +879,16 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 9: // TypeDecl ::= TYPE ID Type 
             {
-              List<Type> RESULT =null;
-		Location typeDeclxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
-		Location typeDeclxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
-		Type typeDecl = (Type)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG11
-  List<Type> tp = new LinkedList<>();
-				tp.add(typeDecl);
-				RESULT = tp;	
+              List<Declaration> RESULT =null;
+		Location typeDxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
+		Location typeDxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
+		Type typeD = (Type)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
+		//@@CUPDBG10
+ 	
+				List<Declaration> td = new LinkedList<>(); 
+				td.add( (Declaration) (new TypeDecl("",typeD)));						
+				RESULT = td;	
+			
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TypeDecl",7, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-2)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;
@@ -893,13 +896,18 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 10: // TypeDecl ::= TYPE LPAR TypeSpecList RPAR 
             {
-              List<Type> RESULT =null;
+              List<Declaration> RESULT =null;
 		Location typeDeclsxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).xleft;
 		Location typeDeclsxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).xright;
 		List<Type> typeDecls = (List<Type>)((java_cup.runtime.Symbol) CUP$Parser$stack.elementAt(CUP$Parser$top-1)).value;
-		//@@CUPDBG12
+		//@@CUPDBG11
 	
-				RESULT = typeDecls;	 
+				List<Declaration> td = new LinkedList<>(); 
+				Iterator<Type> it = typeDecls.iterator();
+   				while (it.hasNext()) 
+					td.add( (Declaration) (new TypeDecl("",it.next())));			   				
+			   RESULT = td;	 
+			
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TypeDecl",7, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-3)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;
@@ -914,7 +922,7 @@ class CUP$Parser$actions {
 		Location typesxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location typesxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
 		List<Type> types = (List<Type>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG13
+		//@@CUPDBG12
 					
 					types.add(0,type);
 					RESULT = types;
@@ -928,7 +936,7 @@ class CUP$Parser$actions {
           case 12: // TypeSpecList ::= 
             {
               List<Type> RESULT =null;
-		//@@CUPDBG14
+		//@@CUPDBG13
  RESULT = new LinkedList<>(); 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TypeSpecList",9, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -941,7 +949,7 @@ class CUP$Parser$actions {
 		Location idxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
 		Location idxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
 		String id = (String)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
-		//@@CUPDBG15
+		//@@CUPDBG14
  RESULT = new TypeName(id); 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Type",8, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -951,7 +959,13 @@ class CUP$Parser$actions {
           case 14: // Type ::= TypeLit 
             {
               Type RESULT =null;
+		Location Tlitxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
+		Location Tlitxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
+		Type Tlit = (Type)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
+		//@@CUPDBG15
 
+			RESULT = Tlit; // verificar o retorno de Type e TypeLit
+		
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Type",8, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;
@@ -959,7 +973,7 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 15: // TypeLit ::= ArrayType 
             {
-              List<Type> RESULT =null;
+              Type RESULT =null;
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TypeLit",10, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -968,7 +982,7 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 16: // TypeLit ::= StructType 
             {
-              List<Type> RESULT =null;
+              Type RESULT =null;
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TypeLit",10, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -977,7 +991,7 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 17: // TypeLit ::= TIMES Type 
             {
-              List<Type> RESULT =null;
+              Type RESULT =null;
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TypeLit",10, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -986,7 +1000,7 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 18: // TypeLit ::= INTERFACE LBRACK MethodSpecList RBRACK 
             {
-              List<Type> RESULT =null;
+              Type RESULT =null;
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TypeLit",10, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-3)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -995,7 +1009,7 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 19: // TypeLit ::= SliceType 
             {
-              List<Type> RESULT =null;
+              Type RESULT =null;
 
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("TypeLit",10, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1946,12 +1960,16 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 122: // VarDecl ::= VAR VarSpec 
             {
-              List<VarDecl> RESULT =null;
-		Location varDeclsxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
-		Location varDeclsxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
-		List<VarDecl> varDecls = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
+              List<Declaration> RESULT =null;
+		Location varDeclxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xleft;
+		Location varDeclxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
+		List<VarDecl> varDecl = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		//@@CUPDBG19
- RESULT = varDecls; 
+
+				List<Declaration> varD = new LinkedList<>();
+				varD.add((Declaration) varDecl); 
+				RESULT = varD; 
+			
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("VarDecl",6, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;
@@ -1959,12 +1977,18 @@ class CUP$Parser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 123: // VarDecl ::= VAR LPAR VarSpecList RPAR 
             {
-              List<VarDecl> RESULT =null;
+              List<Declaration> RESULT =null;
 		Location varDeclsxleft = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).xleft;
 		Location varDeclsxright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)).xright;
 		List<VarDecl> varDecls = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$Parser$stack.elementAt(CUP$Parser$top-1)).value;
 		//@@CUPDBG20
- RESULT = varDecls; 
+
+				List<Declaration> varDec = new LinkedList<>();
+				Iterator<VarDecl> it = varDecls.iterator();
+				while(it.hasNext());
+					varDec.add(it.next()); 
+				RESULT = varDec; 
+			
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("VarDecl",6, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-3)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
           return CUP$Parser$result;

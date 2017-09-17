@@ -118,7 +118,7 @@ import java.util.regex.Pattern;
 
 /* Básico */
 Newline = \n|\r|\n\r // fim de linha // era = LineTerminator
-Whitespace = [ \t\f] //| {Newline}  // espaco em branco era =  WhiteSpace
+Whitespace = [ \t\f] | {Newline}  // espaco em branco era =  WhiteSpace
 Number = [0-9]+ //era = Digit
 
 /* Comentarios */
@@ -241,24 +241,23 @@ Range = "range"
 %%
 
 // inÃ­cio das aÃ§Ãµes de retorno
-<YYINITIAL> {
-    {Ignore}                    { }
-    {Whitespace}				{ }
-    
+<YYINITIAL> {  
+    //{Whitespace}
     {Newline}					{ 	String num = "[-]?\\d*[.]?\\d+";
     								String id = "\\b[_a-zA-Z][_a-zA-Z0-9]*\\b";
-    								System.out.println("Ultimo: "+tok);
+    								//System.out.println("Ultimo: "+tok);
     								if ( Pattern.matches(num, tok )){ return symbol("SEMICOLON",SEMICOLON);}
     								if ( Pattern.matches(id, tok )){ return symbol("SEMICOLON",SEMICOLON);}
     								if ( tok.equals("return")){ return symbol("SEMICOLON",SEMICOLON);}
     								if ( tok.equals("}")){ return symbol("SEMICOLON",SEMICOLON);}
     								if ( tok.equals("]")){ return symbol("SEMICOLON",SEMICOLON);}
     								if ( tok.equals(")")){ return symbol("SEMICOLON",SEMICOLON);}
-    								if ( tok.equals("fallthrough")){ return symbol("SEMICOLON",SEMICOLON);}    								
+    								if ( tok.equals("fallthrough")){ return symbol("SEMICOLON",SEMICOLON);}
+    															
     							} 
     							       											
     						
-
+	{Ignore}                    { }
     {Plus}                      { return symbol("PLUS", PLUS); }
     {Minus}			            { return symbol("MINUS", MINUS); }
     {Times} 					{ return symbol("TIMES", TIMES); }

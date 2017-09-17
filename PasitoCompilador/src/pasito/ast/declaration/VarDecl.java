@@ -15,7 +15,7 @@ public class VarDecl extends Declaration {
     public VarDecl(String name, Type type, Expression exp) {
         this.name = name;
         this.type = type;
-        this.exp = exp;
+        this.exp = exp;        
     }
 
     @Override
