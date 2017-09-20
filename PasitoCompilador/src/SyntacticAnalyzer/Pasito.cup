@@ -64,20 +64,20 @@ non terminal List<TopLevelDecl> TopLevelDecl;
 non terminal List<Declaration> Declaration;
 non terminal List<TopLevelDecl> FunctionDecl; 
 non terminal List<TopLevelDecl> MethodDecl; 
-non terminal List<Declaration> ConstDecl; 
-non terminal List<Declaration> VarDecl;
-non terminal List<Declaration> TypeDecl;
+non terminal List<ConstDecl> ConstDecl; 
+non terminal List<VarDecl> VarDecl;
+non terminal List<TypeDecl> TypeDecl;
 non terminal Type Type;
-non terminal List<Type> TypeSpecList;
-non terminal Type TypeLit; // PAREI AQUI
-non terminal ArrayType;
-non terminal StructType;
-non terminal SliceType;
+non terminal List<TypeDecl> TypeSpecList;
+non terminal Type TypeLit;
+non terminal ArrayType ArrayType;
+non terminal StructType StructType;
+non terminal SliceType SliceType;
 non terminal FieldDecl;
 non terminal FieldDeclList;
-non terminal MethodSpec;
-non terminal MethodSpecList;
-non terminal Signature; 
+non terminal List<MethodSpec> MethodSpecList;
+non terminal MethodSpec MethodSpec;
+non terminal Signature Signature; 
 non terminal Parameters;
 non terminal Resul;
 non terminal ParameterList;
@@ -86,7 +86,7 @@ non terminal TypeList;
 non terminal Types;
 non terminal List<String> IdentifierList;
 non terminal Expression;
-non terminal ExpressionList;
+non terminal List<Expression> ExpressionList;
 non terminal CompExpression;
 non terminal AddExpression;
 non terminal MultExpression;
@@ -124,17 +124,16 @@ precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
 
 Program ::= TopLevelDecl  : topDecs SEMICOLON Program : prog
-           //  {: prog.declarations.addAll(0,topDecs);
-           //   RESULT = prog; :}
+             {: prog.declarations.addAll(0,topDecs);
+              RESULT = prog; :}
 		  |  {: RESULT = new Program(new LinkedList<>()); :} 
 		    ;
 			
 TopLevelDecl ::=  Declaration  : decl
 				{: 
 					List<TopLevelDecl> tld = new LinkedList<>();
-					Iterator<Declaration> it = decl.iterator();
-					while(it.hasNext())
-						tld.add( (TopLevelDecl) (new Dec(it.next()) ));
+                    for (Declaration d : decl)
+						tld.add(new Dec(d));
 					RESULT = tld; 
 				:} 
 				| FunctionDecl : func
@@ -145,39 +144,44 @@ TopLevelDecl ::=  Declaration  : decl
 
 Declaration ::= ConstDecl  : constDecl	
 			   {: 				
-				RESULT = constDecl;
+					List<Declaration> dec = new LinkedList<>();
+					for(Declaration c: constDecl)
+						dec.add(c);
+				RESULT = dec;
 			  :}		 
 			  | VarDecl : varDecl
 			  {:
-				 RESULT = varDecl;
+					List<Declaration> dec = new LinkedList<>();
+					for(Declaration v: varDecl)
+						dec.add(v);
+					RESULT = dec;
 			  :}
 			  | TypeDecl : typeDecl 
-			  {: 
-				 RESULT = typeDecl;
+			  {:	
+					List<Declaration> dec = new LinkedList<>();
+					for(Declaration d: typeDecl)
+						dec.add(d);
+					RESULT = dec; 					
 			  :}
 			  ;
 
-TypeDecl ::= TYPE ID Type :typeD
+TypeDecl ::= TYPE ID:nm Type :type
 			{: 	
-				List<Declaration> td = new LinkedList<>(); 
-				td.add( (Declaration) (new TypeDecl("",typeD)));						
+				List<TypeDecl> td = new LinkedList<>(); 
+				td.add(new TypeDecl(nm, type));						
 				RESULT = td;	
 			:}
 				
            | TYPE LPAR TypeSpecList : typeDecls RPAR
-           {:	
-				List<Declaration> td = new LinkedList<>(); 
-				Iterator<Type> it = typeDecls.iterator();
-   				while (it.hasNext()) 
-					td.add( (Declaration) (new TypeDecl("",it.next())));			   				
-			   RESULT = td;	 
+           {:				   				
+			   RESULT = typeDecls;	 
 			:} 
            ;
 
-TypeSpecList ::=  ID Type : type SEMICOLON TypeSpecList  : types
+TypeSpecList ::=  ID:nm Type : type SEMICOLON TypeSpecList  : tyDecs
 				{:					
-					types.add(0,type);
-					RESULT = types;
+					tyDecs.add(0, new TypeDecl(nm, type));
+					RESULT = tyDecs;
 					
 				:}
 				| {: RESULT = new LinkedList<>(); :}
@@ -190,11 +194,17 @@ Type ::=  ID : id {: RESULT = new TypeName(id); :}
 		:}
 		;
 
-TypeLit ::= ArrayType 
-		  | StructType
-		  | TIMES Type
-		  | INTERFACE LBRACK MethodSpecList RBRACK 
-		  | SliceType ;
+TypeLit ::= ArrayType : array
+			{: RESULT =  array;	:}
+		  | StructType : struct
+		  {: RESULT = struct; :}
+		  | TIMES Type : type
+		  {: RESULT = type; :}
+		  | INTERFACE LBRACK MethodSpecList : method RBRACK
+		  // {: RESULT = method; :} Lista de Métodos 
+		  | SliceType : slice
+		  {: RESULT = slice; :}
+		   ;
 
 StructType ::= STRUCT LBRACK FieldDeclList RBRACK ;
 
@@ -209,11 +219,18 @@ FieldDecl ::=  ID Type
 			 | ID
 			 | TIMES ID ;			 
 
-MethodSpecList ::= MethodSpec SEMICOLON MethodSpecList
-				| ;
+MethodSpecList ::= MethodSpec : method SEMICOLON MethodSpecList : listMethod
+				{: 
+					listMethod.add(0,method);				
+					RESULT = listMethod;
+				 :}
+				| {: RESULT = new LinkedList<>(); :};
 
-MethodSpec ::= ID Signature 
-			 | ID;
+MethodSpec ::= ID :id Signature : sig
+				{: RESULT = new MethodSpec(id,sig); :}
+			 | ID :id
+			 	{: RESULT = new MethodSpec(id,null); :}
+			 ;
 
 Signature ::= Parameters 
             | Parameters Resul ;
@@ -251,28 +268,48 @@ Types ::=  ID COMMA Types
          | TypeLit COMMA
          | TypeLit ;
 
-IdentifierList ::= ID COMMA IdentifierList  : ids
-				{: List name = new LinkedList<String>(); 
-			   		for (String id: ids)
-						name.add(id);
-					RESULT = name;
+IdentifierList ::= ID:nm COMMA IdentifierList  : ids
+				{: ids.add(0,nm);
+					RESULT = ids;
 				:}
-				 | ID : id
+				 | ID : nm
 				 {:	
 					List name = new LinkedList<String>();
-					name.add(id);				
+					name.add(nm);				
 					RESULT = name;
 				 :}
 				  ;
 
 ConstDecl ::=  CONST IdentifierList : ids // Professor que fez
-			{: List<Declaration> constDecls = new LinkedList<>(); 
+			{: List<ConstDecl> constDecls = new LinkedList<>(); 
 			   for (String id: ids)
 					constDecls.add(new ConstDecl(id, null, null));
 				RESULT = constDecls;
 			:}
-			 | CONST IdentifierList ASSIGN ExpressionList
-			 | CONST IdentifierList Type ASSIGN ExpressionList ;
+			 | CONST IdentifierList : ids ASSIGN ExpressionList : exps
+			 {:
+				List<ConstDecl> constDecls = new LinkedList<>();
+				Iterator<String> idIt = ids.iterator();
+				Iterator<Expression> expIt = exps.iterator();
+				while ( idIt.hasNext() && expIt.hasNext() )
+					constDecls.add( new ConstDecl(idIt.next(), null, expIt.next()));
+				if (idIt.hasNext() || expIt.hasNext())
+					//Error.report("******");
+			    RESULT = constDecls;
+			 :}
+			 | CONST IdentifierList : ids Type: type ASSIGN ExpressionList : exps 
+			 {:
+				List<ConstDecl> constDecls = new LinkedList<>();
+				Iterator<String> idIt = ids.iterator();				
+				Iterator<Expression> expIt = exps.iterator();
+				while ( idIt.hasNext() && expIt.hasNext() )
+					constDecls.add( new ConstDecl(idIt.next(), type, expIt.next()));
+				if (idIt.hasNext() || expIt.hasNext())
+					//Error.report("******");
+			    RESULT = constDecls;
+			 :}
+			 ;
+
 
 ExpressionList ::= ExpressionList COMMA Expression 
 				 | Expression;
@@ -362,18 +399,12 @@ ReceiverType ::= ID
 			   | LPAR ReceiverType RPAR ;
 
 VarDecl ::= VAR VarSpec : varDecl // eu que fiz
-			{:
-				List<Declaration> varD = new LinkedList<>();
-				varD.add((Declaration) varDecl); 
-				RESULT = varD; 
+			{:				
+				RESULT = varDecl; 
 			:}  
 		  | VAR  LPAR VarSpecList  : varDecls RPAR // eu que fiz
-		    {:
-				List<Declaration> varDec = new LinkedList<>();
-				Iterator<VarDecl> it = varDecls.iterator();
-				while(it.hasNext());
-					varDec.add(it.next()); 
-				RESULT = varDec; 
+		    {:				
+				RESULT = varDecls; 
 			:} 
 		    ;
 		  
@@ -389,8 +420,29 @@ VarSpec ::= IdentifierList : ids Type : type // professor que fez
 					varDecls.add(new VarDecl(id, type, null));
 			   RESULT = varDecls;
 			:}
-		  | IdentifierList ASSIGN ExpressionList
-		  | IdentifierList Type ASSIGN ExpressionList ;
+		  | IdentifierList : ids ASSIGN ExpressionList : exps
+		  {:
+		  		List<VarDecl> varSpec = new LinkedList<>();
+				Iterator<String> idIt = ids.iterator();
+				Iterator<Expression> expIt = exps.iterator();
+				while(idIt.hasNext() && expIt.hasNext())
+					varSpec.add(new VarDecl(idIt.next(),null,expIt.next()));
+				
+				if(idIt.hasNext() || expIt.hasNext())
+					System.out.println("ERRO  de Atribuição");
+		  :}
+		  | IdentifierList :ids Type : type ASSIGN ExpressionList : exps 
+		  {:
+		  List<VarDecl> varSpec = new LinkedList<>();
+				Iterator<String> idIt = ids.iterator();
+				Iterator<Expression> expIt = exps.iterator();
+				while(idIt.hasNext() && expIt.hasNext())
+					varSpec.add(new VarDecl(idIt.next(),type,expIt.next()));
+				
+				if(idIt.hasNext() || expIt.hasNext())
+					System.out.println("ERRO  de Atribuição");
+		  :}
+		  ;
 
 FunctionDecl ::= FUNC ID Function ;
 
