@@ -345,4 +345,9 @@ public class PrettyPrint implements PasitoVisitor {
     public Object VisitUnaryOperator(UnaryOperator unaryOperator) {
         return null;
     }
+	@Override
+	public Object VisitBooleanLiteral(BooleanLiteral booleanLiteral) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

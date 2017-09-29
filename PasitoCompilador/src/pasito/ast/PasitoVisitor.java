@@ -56,6 +56,7 @@ public interface PasitoVisitor {
     Object VisitBinaryExpression(BinaryExpression binaryExpression);
     Object VisitIntLiteral(IntLiteral intLiteral);
     Object VisitFloatLiteral(FloatLiteral floatLiteral);
+    Object VisitBooleanLiteral(BooleanLiteral booleanLiteral);
     Object VisitFunctionLiteral(FunctionLiteral functionLiteral);
     Object VisitCompositLit(CompositeLit compositeLit);
     Object VisitIdExpression(IdExpression idExpression);

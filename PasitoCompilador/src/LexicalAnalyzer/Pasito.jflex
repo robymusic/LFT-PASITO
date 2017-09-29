@@ -84,7 +84,8 @@ import java.util.regex.Pattern;
     	
 		ultimo = symbolFactory.newSymbol(nome, code,
                             new Location(yyline+1, yycolumn+1, yychar),
-                            new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));                            
+                            new Location(yyline+1, yycolumn+yylength(), yychar+yylength()),
+                            val);                            
         
 	    tok = yytext();
 	    return ultimo;
@@ -96,7 +97,8 @@ import java.util.regex.Pattern;
     	
         ultimo = symbolFactory.newSymbol(nome, code,
                             new Location(yyline+1, yycolumn+1, yychar),
-                            new Location(yyline+1, yycolumn+yylength(), yychar+yylength()));
+                            new Location(yyline+1, yycolumn+yylength(), yychar+yylength()),
+                            val);
                                     
 		tok = yytext();
 		return ultimo;
@@ -162,6 +164,8 @@ Plus = "+" // operador de soma
 Minus = "-" // operador de subtraÃ§Ã£o
 Times =  "*" // operador de multiplicacao (Star)
 Div = "/" // operador de divisao (Slash)
+
+/* Operadores unarios */
 
 
 /* Operadores lÃ³gicos */ 
@@ -272,11 +276,12 @@ Range = "range"
     {Lt}     					{ return symbol("LT", LT); }	
     {Eq}						{ return symbol("EQ", EQ); }	
     {Not}		 				{ return symbol("NOT", NOT); }
-
+    
+    
     {Dot}			            { return symbol("DOT", DOT); }
     {DotDotDot}		            { return symbol("DOTDOTDOT", DOTDOTDOT); }
     {Comma}		        	    { return symbol("COMMA", COMMA); }
-    {Semicolon}                 { return symbol("SEMICOLON", SEMICOLON, (yytext()) ); }
+    {Semicolon}                 { return symbol("SEMICOLON", SEMICOLON, (yytext().intern()) ); }
     {LPAR} 						{ return symbol("LPAR", LPAR); }
 	{RPAR} 						{ return symbol("RPAR", RPAR); }
     {LSBRACK}					{ return symbol("LSBRACK", LSBRACK); }
@@ -297,22 +302,22 @@ Range = "range"
     {Interface}                 { return symbol("INTERFACE", INTERFACE); }
     {Type}                      { return symbol("TYPE", TYPE); }
     {If}                        { return symbol("IF", IF); }
-    {Var}                       { return symbol("VAR", VAR, (yytext())); }
+    {Var}                       { return symbol("VAR", VAR, (yytext().intern() ) ); }
     {Const}						{ return symbol("CONST", CONST); }
     {Case}                      { return symbol("CASE",CASE); }
     {Return}					{ return symbol("RETURN", RETURN, (yytext())); }
    	
-    {Float_Number}              { return symbol("FLOAT_NUMBER", FLOAT_NUMBER , new Float(yytext())); }   
-    {Int_Number}                { return symbol("INT_NUMBER", INT_NUMBER , new Integer(Integer.parseInt(yytext()))); }
+    {Float_Number}              { return symbol("FLOAT_NUMBER", FLOAT_NUMBER , new Float(yytext().intern() )); }   
+    {Int_Number}                { return symbol("INT_NUMBER", INT_NUMBER , new Integer(Integer.parseInt( yytext().intern() ) ) ); }
 	{Int32} 					{ return symbol("INT32", INT32, (yytext()) ); }
 	{Float64}					{ return symbol("FLOAT64", FLOAT64, (yytext()) ); }	
 	
 	{Octal}						{ return symbol ("OCTAL",NUMBER, (yytext())); }
 	{Hexa}						{ return symbol ("HEXA",NUMBER, (yytext())); }
 	{Boolean}                   { return symbol("BOOLEAN", BOOLEAN); }
-	{True}						{ return symbol("BOOLEAN", TRUE, (yytext())); }
-	{False}						{ return symbol("BOOLEAN", FALSE, (yytext())); }
-	{ident}						{ return symbol("ID", ID, (yytext())); }
+	{True}						{ return symbol("BOOLEAN", TRUE, new Boolean(yytext().intern())); }
+	{False}						{ return symbol("BOOLEAN", FALSE, new Boolean(yytext().intern())); }
+	{ident}						{ return symbol("ID", ID, (yytext().intern() )); }
 								
   // Retorna o "ponto e virgula" nos casos onde não são colocados  
   	    

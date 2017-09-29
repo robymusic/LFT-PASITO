@@ -7,6 +7,13 @@ public class BesteBola {
 	public BesteBola(String n, int v){
 		this.nome = n;
 		this.valor = v;
+	//	int c = Integer.parseInt(s);
+		try {
+			
+		}catch (Exception e) {
+			// TODO: handle exception
+			
+		}
 	}
 
 }

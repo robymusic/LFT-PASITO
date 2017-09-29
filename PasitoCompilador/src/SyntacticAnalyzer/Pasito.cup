@@ -1,6 +1,7 @@
 package SyntacticAnalyzer;
 
 import java.io.FileInputStream;
+import java.util.HashMap;
 import LexicalAnalyzer.LexicalAnalyzer;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -17,7 +18,8 @@ import pasito.ast.signature.*;
 import pasito.ast.statement.*;
 import pasito.ast.topLevelDecl.*;
 import pasito.ast.type.*;
-// 
+import pasito.ast.element.*;
+import pasito.ast.util.*;
 
 parser code {:
   protected LexicalAnalyzer lexer; // cria objeto LexicalAnalyzer (classe criada pelo JFlex com os automatos)
@@ -25,9 +27,10 @@ parser code {:
 
 init with {:
     ComplexSymbolFactory f = new ComplexSymbolFactory(); // cria instância do ComplexSymbolFactory
-    symbolFactory = f;	
- 	 File file = new File("Teste.Pasito");
+    symbolFactory = f;		
+ 	 File file = new File("Teste.Pasito");	
  	 FileInputStream fis = null;
+	 Integer stateNumber; //stateNumber = scanner.states.getNumber( id ); 
   try {
     fis = new FileInputStream(file);
   } catch (IOException e) {
@@ -44,26 +47,28 @@ init with {:
     lexer = new LexicalAnalyzer(f,fis); // chamando construtor do LexicalAnalyzer com symbolFactory e arquivo de entrada em pasito
 :};
 
-scan with {:
+scan with {:	
     return lexer.next_token(); // chama próximo token
 :};
 
 /* @@@@@@@@@@@@ terminais (tokens retornados pelo analisador léxico, utilizados para criar classe Symbol) @@@@@@@@@@@@ */
 terminal String ID;
 terminal DEFAULT, FUNC, INTERFACE,FALLTHROUGH, CASE, STRUCT, TYPE, ELSE, SWITCH, IF, CONST, VAR;
-terminal FOR, RETURN, RANGE;
-terminal BOOLEAN, TRUE, FALSE, INT32, FLOAT64;
-terminal Integer INT_NUMBER, NUMBER;
+terminal FOR, RETURN, RANGE, BOOLEAN;
+terminal Boolean TRUE, FALSE;
+terminal INT32, FLOAT64, NUMBER;
+terminal Integer INT_NUMBER ;
 terminal Float FLOAT_NUMBER;
-terminal PLUS, MINUS, TIMES, DIV, AND, EQ, NOT;
-terminal LPAR, RPAR, LT, LSBRACK, RSBRACK, LBRACK,
-         RBRACK, ASSIGN, DASSIGN, COMMA, SEMICOLON, EXCL, DOTDOTDOT, COLON, DOT;
+terminal PLUS, MINUS, TIMES, DIV, AND, EQ, LT;
+terminal NOT, EXCL;
+terminal LPAR, RPAR, LSBRACK, RSBRACK, LBRACK,
+         RBRACK, ASSIGN, DASSIGN, COMMA, SEMICOLON, DOTDOTDOT, COLON, DOT;
 
 non terminal Program Program;
 non terminal List<TopLevelDecl> TopLevelDecl;
 non terminal List<Declaration> Declaration;
-non terminal List<TopLevelDecl> FunctionDecl; 
-non terminal List<TopLevelDecl> MethodDecl; 
+non terminal FunctionDecl FunctionDecl; 
+non terminal MethodDecl MethodDecl; 
 non terminal List<ConstDecl> ConstDecl; 
 non terminal List<VarDecl> VarDecl;
 non terminal List<TypeDecl> TypeDecl;
@@ -73,55 +78,55 @@ non terminal Type TypeLit;
 non terminal ArrayType ArrayType;
 non terminal StructType StructType;
 non terminal SliceType SliceType;
-non terminal FieldDecl;
-non terminal FieldDeclList;
+non terminal FieldDecl FieldDecl;
+non terminal List<FieldDecl> FieldDeclList;
 non terminal List<MethodSpec> MethodSpecList;
 non terminal MethodSpec MethodSpec;
-non terminal Signature Signature; 
-non terminal Parameters;
-non terminal Resul;
-non terminal ParameterList;
-non terminal ParameterDeclList;
-non terminal TypeList;
-non terminal Types;
+non terminal Signature Signature;  //
+non terminal List <FormalParameter> Parameters; // verificar se é uma lista
+non terminal List <FormalParameter> Resul; // verificar o tipo da lista
+non terminal List <FormalParameter> ParameterList; // ***
+non terminal List<FormalParameter> ParameterDeclList; //***
+non terminal List <Type> TypeList;
+non terminal List <Type> Types;
 non terminal List<String> IdentifierList;
-non terminal Expression;
+non terminal Expression Expression;
 non terminal List<Expression> ExpressionList;
-non terminal CompExpression;
-non terminal AddExpression;
-non terminal MultExpression;
-non terminal UnaryExpr;
-non terminal unary_op;
-non terminal PrimaryExpr;
-non terminal Slice;
-non terminal Arguments;
-non terminal Args;
-non terminal VariadicCommaOp;
-non terminal Operand;
-non terminal CompositeLit;
-non terminal Function;
-non terminal MethodExpr;
-non terminal LiteralType;
-non terminal LiteralValue;
-non terminal ReceiverType;
-non terminal Element;
-non terminal ElementList;
-non terminal KeyedElement;
+non terminal CompExpression; // não usei
+non terminal AddExpression; // não usei
+non terminal MultExpression; // não usei
+non terminal Args; // não usei
+non terminal MethodExpr; // não usei
+non terminal UnaryExpression UnaryExpr;
+non terminal UnaryOperator unary_op;
+non terminal Expression PrimaryExpr;
+non terminal Expression Slice;
+non terminal Pair Arguments;
+non terminal Boolean VariadicCommaOp;// nao sei se ta certo
+non terminal Expression Operand;
+non terminal CompositeLit CompositeLit;
+non terminal FunctionDecl Function;
+non terminal Type LiteralType; 
+non terminal LiteralElement LiteralValue;
+non terminal TypeName ReceiverType;
+non terminal Element Element;
+non terminal List<KeyedElement> ElementList;
+non terminal KeyedElement KeyedElement;
 non terminal List<VarDecl> VarSpec; 
 non terminal List<VarDecl> VarSpecList;
-non terminal Block;
-non terminal Statement;
-non terminal StatementList;
-non terminal SimpleStmt;
-non terminal ForStmt;
-non terminal IfStmt;
-non terminal ElseOpt;
+non terminal Block Block;
+non terminal Statement Statement;
+non terminal List<Statement> StatementList;
+non terminal Statement SimpleStmt;
+non terminal ForStmt ForStmt;
+non terminal IfStmt IfStmt;
+non terminal IfElseStmt ElseOpt;
 
 /* Precedences */
 precedence left AND;
 precedence left LT, EQ;
 precedence left PLUS, MINUS;
-precedence left TIMES, DIV;
+precedence left TIMES , DIV;
 
 Program ::= TopLevelDecl  : topDecs SEMICOLON Program : prog
              {: prog.declarations.addAll(0,topDecs);
@@ -137,29 +142,60 @@ TopLevelDecl ::=  Declaration  : decl
 					RESULT = tld; 
 				:} 
 				| FunctionDecl : func
-				 {: RESULT  = func; :}
+				{: 
+					List<TopLevelDecl> tld = new LinkedList<>();                    
+					tld.add(func);
+					RESULT = tld; 
+				:} 				
 				| MethodDecl  : method
-				 {: RESULT  = method; :} 
+				{: 
+					List<TopLevelDecl> tld = new LinkedList<>();                    
+					tld.add(method);
+					RESULT = tld; 
+				:} 	
 				;
 
 Declaration ::= ConstDecl  : constDecl	
 			   {: 				
 					List<Declaration> dec = new LinkedList<>();
-					for(Declaration c: constDecl)
+					for(ConstDecl c: constDecl)
 						dec.add(c);
 				RESULT = dec;
 			  :}		 
 			  | VarDecl : varDecl
 			  {:
-					List<Declaration> dec = new LinkedList<>();
-					for(Declaration v: varDecl)
-						dec.add(v);
+					List<Declaration> dec = new LinkedList<>();	
+					int i = 0;									
+					for(VarDecl v: varDecl)	{				
+							System.out.println("Declaration : VARDECL.name = "+ varDecl.get(i).name);
+							if (varDecl.get(i).type != null){
+								TypeName tp = (TypeName) varDecl.get(i).type;
+								System.out.println("Declaration : VARDECL.type = "+ tp.name);
+							}
+							UnaryExpression uexp = (UnaryExpression) varDecl.get(i).exp;
+							if (uexp.exp instanceof IntLiteral){
+								IntLiteral xp = (IntLiteral) uexp.exp;
+								System.out.println("Declaration : VARDECL.exp = "+ xp.value);		
+							}
+							
+						   if (uexp.exp instanceof FloatLiteral){
+								FloatLiteral xp = (FloatLiteral) uexp.exp;
+								System.out.println("Declaration : VARDECL.exp = "+ xp.value);		
+							}
+
+						   if (uexp.exp instanceof BooleanLiteral){
+								BooleanLiteral xp = (BooleanLiteral) uexp.exp;
+								System.out.println("Declaration : VARDECL.exp = "+ xp.value);		
+							}
+							i++;
+							dec.add(v);	
+					}					
 					RESULT = dec;
 			  :}
 			  | TypeDecl : typeDecl 
 			  {:	
 					List<Declaration> dec = new LinkedList<>();
-					for(Declaration d: typeDecl)
+					for(TypeDecl d: typeDecl)
 						dec.add(d);
 					RESULT = dec; 					
 			  :}
@@ -190,7 +226,7 @@ TypeSpecList ::=  ID:nm Type : type SEMICOLON TypeSpecList  : tyDecs
 Type ::=  ID : id {: RESULT = new TypeName(id); :}
 		| TypeLit : Tlit
 		{:
-			RESULT = Tlit; // verificar o retorno de Type e TypeLit
+			RESULT = Tlit; 
 		:}
 		;
 
@@ -201,23 +237,37 @@ TypeLit ::= ArrayType : array
 		  | TIMES Type : type
 		  {: RESULT = type; :}
 		  | INTERFACE LBRACK MethodSpecList : method RBRACK
-		  // {: RESULT = method; :} Lista de Métodos 
+		   {: 
+				List<MethodSpecOrInterfaceName> met = new LinkedList<>();
+				for(MethodSpec m : method)
+					met.add(m);
+				RESULT = new InterfaceType(met); :} // Lista de Métodos 
 		  | SliceType : slice
 		  {: RESULT = slice; :}
 		   ;
 
-StructType ::= STRUCT LBRACK FieldDeclList RBRACK ;
+StructType ::= STRUCT LBRACK FieldDeclList : fieldDec RBRACK 
+			{: RESULT = new StructType(fieldDec); :};
 
-ArrayType ::= LSBRACK Expression RSBRACK Type ;
+ArrayType ::= LSBRACK Expression: exp RSBRACK Type : type 
+			{:
+				RESULT = new ArrayType(exp, type);
+			:}
+			;
 
-SliceType ::= LSBRACK RSBRACK Type ;
+SliceType ::= LSBRACK RSBRACK Type : type
+			{: RESULT = new SliceType(type); :} ;
 
-FieldDeclList ::= FieldDecl SEMICOLON FieldDeclList
-				| ;
+FieldDeclList ::= FieldDecl : fieldecl SEMICOLON FieldDeclList : fieldeclList
+				{: 
+					fieldeclList.add(0,fieldecl);
+					RESULT = fieldeclList;
+				 :}
+				| {: RESULT = new LinkedList<>(); :};
 
-FieldDecl ::=  ID Type
-			 | ID
-			 | TIMES ID ;			 
+FieldDecl ::=  ID : name Type : type {: RESULT = new FieldDecl(name,type); :}
+			 | ID : name {: RESULT = new FieldDecl(name,null); :}
+			 | TIMES ID: name {: RESULT = new FieldDecl(name,null); :} ;			 
 
 MethodSpecList ::= MethodSpec : method SEMICOLON MethodSpecList : listMethod
 				{: 
@@ -232,50 +282,159 @@ MethodSpec ::= ID :id Signature : sig
 			 	{: RESULT = new MethodSpec(id,null); :}
 			 ;
 
-Signature ::= Parameters 
-            | Parameters Resul ;
+Signature ::= Parameters : par
+				{:
+					
+					RESULT = new Signature(par	, null, null);				
+//Signature(List<FormalParameter> inPars, FormalParameter variadicPar,
+ //                    List<FormalParameter> outPars)
+				:}			
+            | Parameters : par Resul : res 
+            	{:
+            		RESULT = new Signature(par	, null, res);	
+            	:}
+			;
 	            
-Resul ::= Parameters
-	    | Type ;
+Resul ::= Parameters : par // Não entendi 
+		{: RESULT = par; :}
+	    | Type : type
+	    {: List<FormalParameter> p = new LinkedList<>();
+			p.add(new FormalParameter("",type));
+			RESULT = p;:}
+	     ;
     
-Parameters ::= LPAR RPAR
-			 | LPAR ParameterList RPAR
-			 | LPAR TypeList RPAR ;
+Parameters ::= LPAR RPAR {: RESULT = new LinkedList<>(); :}// Nao entendi
+			 | LPAR ParameterList : parList RPAR {: RESULT = parList; :}
+			 | LPAR TypeList : typeList RPAR  
+			 	{: List<FormalParameter> p = new LinkedList<>();
+					for(Type t : typeList)					
+						p.add(new FormalParameter(null,t));
+					RESULT = p;:}
+			 ;
 
-ParameterList ::= ParameterDeclList
-				| ID DOTDOTDOT Type
-				| ID DOTDOTDOT Type COMMA ;
+ParameterList ::= ParameterDeclList : parDec
+					{: RESULT = parDec; :}
+				| ID:nm DOTDOTDOT Type :type 
+				{: List<FormalParameter> p = new LinkedList<>();
+					p.add(new FormalParameter(nm,type));
+					RESULT = p;:}
+				| ID:nm DOTDOTDOT Type :type COMMA 
+				{: List<FormalParameter> p = new LinkedList<>();
+					p.add(new FormalParameter(nm,type));
+					RESULT = p;:}
+				;
 
-ParameterDeclList ::= IdentifierList Type COMMA ParameterDeclList 
-				   | IdentifierList Type COMMA
-				   | IdentifierList Type
-				   | IdentifierList Type COMMA ID DOTDOTDOT Type COMMA
-				   | IdentifierList Type COMMA ID DOTDOTDOT Type ;
+ParameterDeclList ::= IdentifierList : lname Type : type COMMA ParameterDeclList : parDecList //** 
+				   {: 
+						for(String s : lname)
+							parDecList.add(0,new FormalParameter(s,type));
+						RESULT = parDecList;
+				   :}
+				   | IdentifierList: lname Type : type COMMA
+				   {: 
+						List<FormalParameter> p = new LinkedList<>();
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));
+						RESULT = p;
+				   :}				  
+				   | IdentifierList : lname Type : type
+				   {: 
+						List<FormalParameter> p = new LinkedList<>();
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));
+						RESULT = p;
+				   :}	
+				   | IdentifierList : lname Type : type COMMA ID : id DOTDOTDOT Type : tp COMMA
+				    {: 
+						List<FormalParameter> p = new LinkedList<>();
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));
+						p.add(new FormalParameter(id,tp));
 
-TypeList ::=  Types
-			| DOTDOTDOT Type COMMA
-			| DOTDOTDOT Type
+//class Pair<A,B> {
+//  public A fst;
+//  public B snd;
+//}
+
+
+						//RESULT = new Pair<>(p, new Pair<>(id, tp));
+				   :}	
+				   | IdentifierList : lname Type : type COMMA ID : id DOTDOTDOT Type : tp 
+				    {: 
+						List<FormalParameter> p = new LinkedList<>();
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));
+						p.add(new FormalParameter(id,tp));
+						RESULT = p;
+				   :}
+				   ;
+
+TypeList ::=  Types : types
+			 {:RESULT = types; :}
+			| DOTDOTDOT Type: type COMMA
+			{:	List<Type> tp = new LinkedList<>();
+				tp.add(type);
+				RESULT = tp; 
+			:}
+			| DOTDOTDOT Type : type
+			{:	List<Type> tp = new LinkedList<>();
+				tp.add(type);
+				RESULT = tp; 
+			:}			
 		;
 
-Types ::=  ID COMMA Types
-		 | ID COMMA DOTDOTDOT Type COMMA
-		 | ID COMMA DOTDOTDOT Type
-         | ID COMMA
-         | ID
-         | TypeLit COMMA Types
-		 | TypeLit COMMA DOTDOTDOT Type COMMA
-		 | TypeLit COMMA DOTDOTDOT Type
-         | TypeLit COMMA
-         | TypeLit ;
+Types ::=  ID COMMA Types : types
+			{:RESULT = types; :}
+		 | ID COMMA DOTDOTDOT Type : type COMMA
+		 {:	List<Type> tp = new LinkedList<>();
+				tp.add(type);
+				RESULT = tp; 
+			:}	
+		 | ID COMMA DOTDOTDOT Type : type
+		 {:	List<Type> tp = new LinkedList<>();
+				tp.add(type);
+				RESULT = tp; 
+		:}	
+         | ID COMMA {: RESULT = new LinkedList<>(); :}
+         | ID {: RESULT = new LinkedList<>(); :}
+         | TypeLit : typeLit COMMA Types : types
+         {: types.add(0,typeLit); 
+			RESULT = types;	
+		 :}
+		 | TypeLit :tpl COMMA DOTDOTDOT Type:type COMMA
+		  {: List<Type> tp = new LinkedList<>();
+				tp.add(tpl);
+				tp.add(type);
+				RESULT = tp; 
+		 :}
+		 | TypeLit :tpl COMMA DOTDOTDOT Type:type
+		  {: List<Type> tp = new LinkedList<>();
+				tp.add(tpl);
+				tp.add(type);
+				RESULT = tp; 
+		 :}
+         | TypeLit :tpl COMMA
+          {: List<Type> tp = new LinkedList<>();
+				tp.add(tpl);				
+				RESULT = tp; 
+		 :}
+         | TypeLit :tpl
+          {: List<Type> tp = new LinkedList<>();
+				tp.add(tpl);				
+				RESULT = tp; 
+		 :}
+         ;
 
 IdentifierList ::= ID:nm COMMA IdentifierList  : ids
 				{: ids.add(0,nm);
 					RESULT = ids;
 				:}
 				 | ID : nm
-				 {:	
-					List name = new LinkedList<String>();
-					name.add(nm);				
+				 {:			
+					
+					List<String> name = new LinkedList<>();
+					name.add(nm);		
+					System.out.println("Identificador = "+ nm);							
 					RESULT = name;
 				 :}
 				  ;
@@ -294,7 +453,7 @@ ConstDecl ::=  CONST IdentifierList : ids // Professor que fez
 				while ( idIt.hasNext() && expIt.hasNext() )
 					constDecls.add( new ConstDecl(idIt.next(), null, expIt.next()));
 				if (idIt.hasNext() || expIt.hasNext())
-					//Error.report("******");
+					 //ERRO.report("erro na declaração de constantes");
 			    RESULT = constDecls;
 			 :}
 			 | CONST IdentifierList : ids Type: type ASSIGN ExpressionList : exps 
@@ -305,44 +464,82 @@ ConstDecl ::=  CONST IdentifierList : ids // Professor que fez
 				while ( idIt.hasNext() && expIt.hasNext() )
 					constDecls.add( new ConstDecl(idIt.next(), type, expIt.next()));
 				if (idIt.hasNext() || expIt.hasNext())
-					//Error.report("******");
+					//ERRO.report("erro na declaração de constantes");
 			    RESULT = constDecls;
 			 :}
 			 ;
 
 
-ExpressionList ::= ExpressionList COMMA Expression 
-				 | Expression;
+ExpressionList ::= ExpressionList : exps COMMA Expression : exp 
+				 {: exps.add(exp);
+					RESULT = exps;
+				 :}
+				 | Expression : exp
+				 {:
+					List<Expression> ex = new LinkedList<>();
+					ex.add(exp);
+					RESULT = ex;
+				 :}
+				 ;
 
-Expression ::= Expression PLUS Expression
-			 | Expression MINUS Expression
-			 | Expression TIMES Expression
-			 | Expression DIV Expression
-			 | Expression LT Expression
-			 | Expression EQ Expression
-			 | Expression AND Expression 
-			 | UnaryExpr ;			 
+Expression ::= Expression : exp1 PLUS Expression : exp2
+				{:	RESULT = new BinaryExpression(BinaryOperator.PLUS,exp1,exp2); :}
+			 | Expression : exp1 MINUS Expression : exp2
+			 {:	RESULT = new BinaryExpression(BinaryOperator.MINUS,exp1,exp2); :}
+			 | Expression : exp1 TIMES Expression : exp2
+			 {:	RESULT = new BinaryExpression(BinaryOperator.TIMES,exp1,exp2); :}
+			 | Expression : exp1 DIV Expression : exp2
+			 {:	RESULT = new BinaryExpression(BinaryOperator.DIV,exp1,exp2); :}
+			 | Expression : exp1 LT Expression : exp2
+			 {:	RESULT = new BinaryExpression(BinaryOperator.LT,exp1,exp2); :}
+			 | Expression : exp1 EQ  Expression : exp2
+			 {:	RESULT = new BinaryExpression(BinaryOperator.EQ,exp1,exp2); :}
+			 | Expression : exp1 AND Expression : exp2 
+			 {:	RESULT = new BinaryExpression(BinaryOperator.AND,exp1,exp2); :}
+			 | UnaryExpr : uexp
+			 	{:RESULT = uexp; :}
+			  ;			 
 
-UnaryExpr ::= PrimaryExpr
-			| unary_op UnaryExpr ;
+UnaryExpr ::= PrimaryExpr : pexp
+				{: RESULT = new UnaryExpression(null,pexp); :}
+			| unary_op :uop UnaryExpr: uexp
+			{:
+				RESULT = new UnaryExpression(uop, uexp);	
+			:}
+			 ;
 
-unary_op ::= PLUS | MINUS | EXCL | TIMES ;
+unary_op ::= PLUS {: RESULT = UnaryOperator.PLUS; :} | MINUS {: RESULT = UnaryOperator.MINUS; :} | TIMES {: RESULT = UnaryOperator.POINTED_BY; :} | NOT {: RESULT = UnaryOperator.NOT; :} ;
 
-PrimaryExpr ::= Operand
-			  | PrimaryExpr DOT ID
-			  | PrimaryExpr LSBRACK Expression RSBRACK
-			  | PrimaryExpr LSBRACK Slice RSBRACK
-			  | PrimaryExpr LPAR Arguments RPAR
-			  | PrimaryExpr LPAR RPAR ;
+PrimaryExpr ::= Operand : op {: RESULT = op; :}
+			  | PrimaryExpr : pexp DOT ID {: RESULT = pexp; :}
+			  | PrimaryExpr : uexp LSBRACK Expression : exp RSBRACK
+			  {: IndexExpression index = new IndexExpression(uexp,exp);
+				RESULT = index;
+			  :}
+			  | PrimaryExpr : exp LSBRACK Slice : slicexp RSBRACK
+			  {: //slicexp.exp = exp;  Verificar se é um SliceExpress ou um FullSliceExpress?
+                 RESULT = slicexp; :}
+			  | PrimaryExpr LPAR Arguments RPAR // função com argumentos com ou sem variadic
+			  | PrimaryExpr : exp LPAR RPAR {: RESULT = exp; :};
 
-Slice ::=  Expression  COLON  Expression 
-	     | Expression COLON
-	     | COLON Expression
+Slice ::=  Expression : exp1  COLON  Expression : exp2
+		 {: RESULT = new SliceExpression(null,exp1,exp2); :} 
+	     | Expression : exp1 COLON
+	     {: RESULT = new SliceExpression(null,exp1,null); :} 
+	     | COLON Expression : exp2
+	     {: RESULT = new SliceExpression(null,null,exp2); :} 
 	     | COLON
-	     | Expression COLON Expression COLON Expression
-	     | COLON Expression COLON Expression ;
+	     {: RESULT = new SliceExpression(null,null,null); :} 
+	     | Expression : exp1 COLON Expression : exp2 COLON Expression : exp3
+	     {: RESULT = new FullSliceExpression(null,exp1,exp2,exp3); :} 
+	     | COLON Expression : exp2 COLON Expression : exp3
+	     {: RESULT = new FullSliceExpression(null,null,exp2,exp3); :}  ;
 
-Arguments ::= ExpressionList VariadicCommaOp ;
+Arguments ::= ExpressionList:exps VariadicCommaOp: variadic // NÃO ENTENDI A CLASSE DE TIPO
+				{:					
+					RESULT = new Pair<>(exps,variadic);;
+				:};
+				
 /*
 			| TypeLit1 COMMA ExpressionList VariadicCommaOp // with Type is Ambbiguous
 			| TypeLit1 VariadicCommaOp
@@ -351,59 +548,79 @@ Arguments ::= ExpressionList VariadicCommaOp ;
 //btw, Type is correct here? The documentation says nothing about this. */
 /**** TIRAMOS Type como primeiro argumento ***********/
 
-VariadicCommaOp ::= DOTDOTDOT
-	 | COMMA
-	 | DOTDOTDOT COMMA
-	 | ;
+VariadicCommaOp ::= DOTDOTDOT {:RESULT = true;:}
+	 | COMMA {:RESULT = false;:}
+	 | DOTDOTDOT COMMA {:RESULT = true;:}
+	 | {:RESULT = false;:};
 
-Operand ::= INT_NUMBER
-		  | FLOAT_NUMBER
-		  | TRUE
-		  | FALSE
-		  | CompositeLit
-		  | FUNC Function 
+Operand ::= INT_NUMBER : inte {: RESULT = new IntLiteral(inte); :}
+		  | FLOAT_NUMBER : floa {: RESULT = new FloatLiteral(floa); :}
+		  | TRUE : v  {: RESULT = new BooleanLiteral(v); :}
+		  | FALSE : f  {: RESULT = new BooleanLiteral(f); :}
+		  | CompositeLit :  comp {: RESULT = comp; :}
+		  | FUNC Function : func {: RESULT = new FunctionLiteral(func.sig, func.body); :}
 		  //| MethodExpr
-		  | LPAR Expression RPAR 
+		  | LPAR Expression : exp RPAR {: RESULT = exp; :} 
 		  
 		  ;
 
-CompositeLit ::= LiteralType LiteralValue;
+CompositeLit ::= LiteralType : Ltype LiteralValue : Lvalue
+				{: 					
+					RESULT = new CompositeLit(Ltype, Lvalue.keyedElems); 
+				:}
+				;
 
-LiteralType ::= StructType
-			  | ArrayType
-			  | LSBRACK DOTDOTDOT RSBRACK Type
-			  | SliceType
+LiteralType ::= StructType : struct {: RESULT = struct; :}
+			  | ArrayType : array {: RESULT = array; :}
+			  | LSBRACK DOTDOTDOT RSBRACK Type : type {: RESULT = type; :}
+			  | SliceType : slice {: RESULT = slice; :}
 			   ;
 			  
-LiteralValue ::= LBRACK RBRACK
-			   | LBRACK ElementList RBRACK ;
+LiteralValue ::= LBRACK RBRACK {: RESULT = new LiteralElement(null); :}
+			   | LBRACK ElementList : elemsLit RBRACK 
+			   	{: RESULT = new LiteralElement(elemsLit); :}
+			   ;
 
-ElementList ::= KeyedElement COMMA ElementList
-			  | KeyedElement 
-			  | KeyedElement COMMA ;
+ElementList ::= KeyedElement : keyed COMMA ElementList : elems
+				{: elems.add(0,keyed);
+				RESULT = elems; :}
+			  | KeyedElement : keyed
+			  {: List<KeyedElement> key = new LinkedList<>();
+				 key.add(keyed);
+				 RESULT = key;  :}
+			  | KeyedElement : keyed COMMA 
+			  {: List<KeyedElement> key = new LinkedList<>();
+				 key.add(keyed);
+				 RESULT = key;  :} ;
 
 			  
-KeyedElement ::=  Element
-			 	| Element COLON Element ;
+KeyedElement ::=  Element : elm
+				{: RESULT = new KeyedElement(null, elm); :}
+			 	| Element : elm1 COLON Element : elm2
+			 	{: 
+					ExpressionElement expElem = (ExpressionElement) elm1; // não sei se pode
+					RESULT = new KeyedElement(expElem.exp, elm2); :}
+			 	 ;
 			 	
-Element ::= Expression
-		  | LiteralValue ;
+Element ::= Expression : exp {: RESULT = new ExpressionElement(exp); :}
+		  | LiteralValue : Lvalue {: RESULT = Lvalue; :};
 
 /*
 MethodExpr ::= ReceiverType DOT ID ;
 */
 //**** MethodExpr will be solved at the static semantics
 
-ReceiverType ::= ID 
-			   | LPAR TIMES ID LPAR
-			   | LPAR ReceiverType RPAR ;
+ReceiverType ::= ID : name {: RESULT = new TypeName(name); :}
+			   | LPAR TIMES ID : name LPAR {: RESULT = new TypeName(name); :}
+			   | LPAR ReceiverType : receiver RPAR 
+			   {: RESULT = receiver; :};
 
 VarDecl ::= VAR VarSpec : varDecl // eu que fiz
-			{:				
+			{:							
 				RESULT = varDecl; 
 			:}  
 		  | VAR  LPAR VarSpecList  : varDecls RPAR // eu que fiz
-		    {:				
+		    {:			
 				RESULT = varDecls; 
 			:} 
 		    ;
@@ -425,73 +642,133 @@ VarSpec ::= IdentifierList : ids Type : type // professor que fez
 		  		List<VarDecl> varSpec = new LinkedList<>();
 				Iterator<String> idIt = ids.iterator();
 				Iterator<Expression> expIt = exps.iterator();
-				while(idIt.hasNext() && expIt.hasNext())
+				while(idIt.hasNext() && expIt.hasNext())					
 					varSpec.add(new VarDecl(idIt.next(),null,expIt.next()));
+				
 				
 				if(idIt.hasNext() || expIt.hasNext())
 					System.out.println("ERRO  de Atribuição");
+
+				RESULT = varSpec;
 		  :}
 		  | IdentifierList :ids Type : type ASSIGN ExpressionList : exps 
 		  {:
-		  List<VarDecl> varSpec = new LinkedList<>();
+		  		List<VarDecl> varSpec = new LinkedList<>();
 				Iterator<String> idIt = ids.iterator();
-				Iterator<Expression> expIt = exps.iterator();
-				while(idIt.hasNext() && expIt.hasNext())
-					varSpec.add(new VarDecl(idIt.next(),type,expIt.next()));
+				Iterator<Expression> expIt = exps.iterator();	
+							
+				while(idIt.hasNext() && expIt.hasNext())						
+					varSpec.add(new VarDecl(idIt.next(),type,expIt.next()));	
+							
 				
 				if(idIt.hasNext() || expIt.hasNext())
 					System.out.println("ERRO  de Atribuição");
+				RESULT = varSpec;
 		  :}
 		  ;
 
-FunctionDecl ::= FUNC ID Function ;
+FunctionDecl ::= FUNC ID:nm Function : funDecl 
+                 {: funDecl.name = nm;
+                    RESULT = funDecl; :} ;
 
-Function ::= Signature Block ;
+Function ::= Signature : sig Block : blck
+             {: RESULT = new FunctionDecl(null, sig, blck); :} ;
 
-Block ::= LBRACK StatementList RBRACK;
+Block ::= LBRACK StatementList : stateList RBRACK
+			{: RESULT = new Block(stateList); :};
 
-StatementList ::= Statement SEMICOLON StatementList
-				| ;
+StatementList ::= Statement : state SEMICOLON StatementList : stateList
+				{: stateList.add(0,state);
+					RESULT = stateList; :}
+				| {: RESULT = new LinkedList<>(); :} ;
 
-MethodDecl ::= FUNC LPAR ID ReceiverType RPAR ID Function ;
+MethodDecl ::= FUNC LPAR ID:id ReceiverType: type RPAR ID:nm Function: function 
+				{:
+					FormalParameter fp = new FormalParameter(id,type);
+					RESULT = new MethodDecl(fp, nm, function.sig, function.body);
+				:}
+				; 
 
-Statement ::= Declaration
-			| SimpleStmt
-			| RETURN 
-			| RETURN ExpressionList
-			| Block
-			| IfStmt
-			| ForStmt ;
+Statement ::= Declaration : dec
+				{: 
+					for( Declaration d : dec)
+						RESULT = new DeclarationStm(d);
+				:}
+			| SimpleStmt : simpleStm {: RESULT = simpleStm; :}
+			| RETURN  {: RESULT = new ReturnStmt(null); :}
+			| RETURN ExpressionList : exps {: RESULT = new ReturnStmt(exps); :}
+			| Block : block {: RESULT = block; :}
+			| IfStmt : ifStm {: RESULT = ifStm; :}
+			| ForStmt : forStm {: RESULT = forStm; :} ;
 
-SimpleStmt ::= Expression
-/*// Se desejarem adicionar incrementos
+SimpleStmt ::= Expression : exp
+				{: RESULT = new ExpressionStmt(exp); :}
+			/*// Se desejarem adicionar incrementos
 		     | Expression PLUSPLUS
 			 | Expression MINUSMINUS  */
-			 | ExpressionList ASSIGN ExpressionList 
-			 | /*IdentifierList*/ ExpressionList DASSIGN ExpressionList
+			 | ExpressionList : exps1 ASSIGN ExpressionList : exps2
+			 {:
+			 	RESULT = new Assignment(exps1,exps2);
+			 :} 
+			 | /*IdentifierList*/ ExpressionList : exps1 DASSIGN ExpressionList : exps2
+			  {:
+			 	RESULT = new Assignment(exps1,exps2);
+			 :} 
 			 | ; //EmptyStmt
 
-IfStmt ::= IF SimpleStmt SEMICOLON Expression Block ElseOpt
-		 | IF Expression Block ElseOpt;
+IfStmt ::= IF SimpleStmt : stm SEMICOLON Expression : exp Block: block ElseOpt : elseOpt 
+			{:
+				block.stmts.add(elseOpt);
+				RESULT = new IfStmt(stm,exp, block);
+			:}
+		 | IF Expression : exp Block : block ElseOpt : elseOpt
+		 	{:
+				block.stmts.add(elseOpt);
+				RESULT = new IfStmt(null,exp, block);
+			:}
+		 ;
 
-ElseOpt ::= ELSE IfStmt
-		  | ELSE Block 
-		  |;
+ElseOpt ::= ELSE IfStmt: ifStm
+			{:
+				RESULT = new IfElseStmt(ifStm, null, null, null); // não sei se esta certo
+			:}
+		  | ELSE Block : block
+		  {:
+				RESULT = new IfElseStmt(null, null, block, null); // não sei se esta certo
+			:}
+		  | {: RESULT = new IfElseStmt(new EmptyStmt(), null, null, null); :}; // não sei se esta certo
 
-ForStmt ::= FOR Expression Block
-		  | FOR SimpleStmt SEMICOLON SimpleStmt SEMICOLON SimpleStmt Block
-		  | FOR RANGE Expression Block
-		  | FOR /*IdentifierList*/ ExpressionList DASSIGN RANGE Expression Block
-		  | FOR ExpressionList ASSIGN RANGE Expression Block;
+
+ForStmt ::= FOR Expression : exp Block : block
+			{:
+				RESULT = new ForStmt(null, exp, null, block);
+			:}
+		  | FOR SimpleStmt:stm1 SEMICOLON SimpleStmt : stm2 SEMICOLON SimpleStmt :stm3 Block : block
+		  {:
+			
+			RESULT = new ForStmt(stm1, null, stm3, block); // não sei o que fazer com stm2
+		  :}
+		  | FOR RANGE Expression: exp Block : body
+		  {:
+				RESULT = new ForStmt(null,exp,null,body);
+		  :}
+		  | FOR /*IdentifierList*/ ExpressionList : expList DASSIGN RANGE Expression : exp Block : body
+		   {:
+				
+		  :}
+		  | FOR ExpressionList ASSIGN RANGE Expression Block;		  
+			// ForStmt(Statement initStmt, Expression exp, Statement postStmt, Block body)
+
 
 // ~~ CUP-ECLIPSE:CONFLICT-RES-RR ~~ 
  // After this the order of productions matters
 
 //Separated and moved by CUP Eclipse plugin
-Operand ::=  ID;
+Operand ::=  ID : id {: System.out.println("Entrei em ID: "); RESULT = new IdExpression(id); :};
 
 //Separated and moved by CUP Eclipse plugin
-LiteralType ::=  ID;
+
+LiteralType ::=  ID : type {: RESULT = new TypeName(type); :};
 
 
 
